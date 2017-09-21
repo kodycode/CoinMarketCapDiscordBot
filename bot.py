@@ -1,5 +1,5 @@
 from discord.ext import commands
-import config
+import json
 
 bot = commands.Bot(command_prefix='$', description='Displays market data from https://coinmarketcap.com/')
 
@@ -38,10 +38,14 @@ class CoinMarketBot:
 
 
 def main():
-    if config.token is None:
-        print("Please enter a config token.")
-        return
-    CoinMarketBot(config.token)
+    try:
+        config_file = open('config.json')
+        config_str = config_file.read()
+        config_data = json.loads(config_str)
+        token = config_data['token']
+        CoinMarketBot(token)
+    except Exception as e:
+        print(e)
 
 
 main()
