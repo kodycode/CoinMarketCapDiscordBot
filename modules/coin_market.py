@@ -1,5 +1,15 @@
 from coinmarketcap import Market
-from operator import itemgetter
+
+fiat_currencies = [
+    "AUD", "BRL", "CAD", "CHF",
+    "CLP", "CNY", "CZK", "DKK",
+    "EUR", "GBP", "HKD", "HUF",
+    "IDR", "ILS", "INR", "JPY",
+    "KRW", "MXN", "MYR", "NOK",
+    "NZD", "PHP", "PKR", "PLN",
+    "RUB", "SEK", "SGD", "THB",
+    "TRY", "TWD", "ZAR"
+]
 
 
 class CoinMarketException(Exception):
@@ -48,6 +58,7 @@ class CoinMarket:
 
             formatted_data += '__**#{}. {} ({})**__ {}\n'.format(data['rank'], data['name'], data['symbol'], hour_trend)
             formatted_data += 'Price (USD): **${:,}**\n'.format(float(data['price_usd']))
+            formatted_data += 'Price (USD): **${:,}**\n'.format(float(data['price_btc']))
             if (data['market_cap_usd'] is None):
                 formatted_data += 'Market Cap (USD): Unknown\n'
             else:
@@ -64,7 +75,7 @@ class CoinMarket:
         except Exception as e:
             print("Failed to format data: " + e)
 
-    async def get_currency(self, currency: str, fiat='USD'):
+    async def get_currency(self, currency: str, fiat: str):
         """
         Obtains the data of the specified currency and returns them.
 
@@ -120,7 +131,7 @@ class CoinMarket:
         except Exception as e:
             raise CoinMarketException(e)
 
-    async def get_live_data(self, currency_list, fiat='USD'):
+    async def get_live_data(self, currency_list, fiat: str):
         """
         Returns updated info of coin stats
 
@@ -128,6 +139,8 @@ class CoinMarket:
         @param fiat - desired currency (i.e. 'EUR', 'USD')
         """
         try:
+            if fiat not in fiat_currencies:
+                raise CoinMarketException("This currency is not supported")
             formatted_data = ''
             data_list = []
             for currency in currency_list:
