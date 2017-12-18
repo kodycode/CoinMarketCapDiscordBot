@@ -123,7 +123,7 @@ class CoinMarketCommand:
         @param client - bot client
         @param message - command received
         """
-        if message.content.startswith("$search"):
+        if message.content.startswith("$search") or message.content.startswith("$s"):
             await self.search(client, message)
         elif message.content.startswith("$stats"):
             await self.stats(client, message)
