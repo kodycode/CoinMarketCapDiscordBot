@@ -11,6 +11,12 @@ fiat_currencies = {
     'TRY': '₺', 'TWD': 'NT$', 'ZAR': 'R ', 'USD': '$'
 }
 
+fiat_suffix = [
+    'CZK', 'DKK', 'HUF',
+    'NOK', 'PKR', 'RUB',
+    'SEK'
+]
+
 
 class FiatException(Exception):
     """Exception class for incorrect fiat"""
@@ -61,7 +67,10 @@ class CoinMarket:
                 isPositivePercent = False
 
             formatted_data += '__**#{}. {} ({})**__ {}\n'.format(data['rank'], data['name'], data['symbol'], hour_trend)
-            formatted_data += 'Price ({}): **{}{:,}**\n'.format(fiat, fiat_currencies[fiat], float(data['price_{}'.format(fiat.lower())]))
+            if fiat in fiat_suffix:
+                formatted_data += 'Price ({}): **{:,} {}**\n'.format(fiat, float(data['price_{}'.format(fiat.lower())]), fiat_currencies[fiat])
+            else:
+                formatted_data += 'Price ({}): **{}{:,}**\n'.format(fiat, fiat_currencies[fiat], float(data['price_{}'.format(fiat.lower())]))
             formatted_data += 'Price (BTC): **{:,}**\n'.format(float(data['price_btc']))
             if (data['market_cap_usd'] is None):
                 formatted_data += 'Market Cap (USD): Unknown\n'
