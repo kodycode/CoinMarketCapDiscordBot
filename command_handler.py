@@ -1,4 +1,4 @@
-from modules.coin_market import CoinMarket
+from modules.coin_market import CoinMarket, FiatException
 import asyncio
 import discord
 
@@ -36,24 +36,27 @@ class CoinMarketCommand:
         @param client - bot client
         @param message - command received
         """
-        param = message.content.split()
-        if len(param) == 3:
-            data, isPositivePercent = await self.coin_market.get_currency(param[1], param[2])
-        elif len(param) == 2:
-            data, isPositivePercent = await self.coin_market.get_currency(param[1])
-        else:
-            await client.send_message(message.channel,
-                                      "Please enter a currency to search. A "
-                                      "particular fiat is optional.")
-        if isPositivePercent:
-            em = discord.Embed(title="Search results",
-                               description=data,
-                               colour=0x009993)
-        else:
-            em = discord.Embed(title="Search results",
-                               description=data,
-                               colour=0xD14836)
-        await client.send_message(message.channel, embed=em)
+        try:
+            param = message.content.split()
+            if len(param) == 3:
+                data, isPositivePercent = await self.coin_market.get_currency(param[1], param[2])
+            elif len(param) == 2:
+                data, isPositivePercent = await self.coin_market.get_currency(param[1])
+            else:
+                await client.send_message(message.channel,
+                                          "Please enter a currency to search. A "
+                                          "particular fiat is optional.")
+            if isPositivePercent:
+                em = discord.Embed(title="Search results",
+                                   description=data,
+                                   colour=0x009993)
+            else:
+                em = discord.Embed(title="Search results",
+                                   description=data,
+                                   colour=0xD14836)
+            await client.send_message(message.channel, embed=em)
+        except FiatException as e:
+            await client.send_message(message.channel, e)
 
     async def stats(self, client, message):
         """
@@ -64,11 +67,14 @@ class CoinMarketCommand:
         @param client - bot client
         @param message - command received
         """
-        data = await self.coin_market.get_stats()
-        em = discord.Embed(title="Market Stats",
-                           description=data,
-                           colour=0x008000)
-        await client.send_message(message.channel, embed=em)
+        try:
+            data = await self.coin_market.get_stats()
+            em = discord.Embed(title="Market Stats",
+                               description=data,
+                               colour=0x008000)
+            await client.send_message(message.channel, embed=em)
+        except FiatException as e:
+            await client.send_message(message.channel, e)
 
     async def live(self, currency_list, live_channel, timer, client, message):
         """
@@ -82,26 +88,29 @@ class CoinMarketCommand:
         @param client - bot client
         @param message - command received
         """
-        if not self.live_on:
-            self.live_on = True
-            param = message.content.split()
-            while True:
-                try:
-                    await client.purge_from(client.get_channel(live_channel),
-                                            limit=100)
-                except:
-                    pass
-                if param == 2:
-                    data = await self.coin_market.get_live_data(currency_list,
-                                                                param[1])
-                else:
-                    data = await self.coin_market.get_live_data(currency_list)
-                em = discord.Embed(title="Live Currency Update",
-                                   description=data,
-                                   colour=0xFFD700)
-                await client.send_message(client.get_channel(live_channel),
-                                          embed=em)
-                await asyncio.sleep(float(timer))
+        try:
+            if not self.live_on:
+                self.live_on = True
+                param = message.content.split()
+                while True:
+                    try:
+                        await client.purge_from(client.get_channel(live_channel),
+                                                limit=100)
+                    except:
+                        pass
+                    if param == 2:
+                        data = await self.coin_market.get_live_data(currency_list,
+                                                                    param[1])
+                    else:
+                        data = await self.coin_market.get_live_data(currency_list)
+                    em = discord.Embed(title="Live Currency Update",
+                                       description=data,
+                                       colour=0xFFD700)
+                    await client.send_message(client.get_channel(live_channel),
+                                              embed=em)
+                    await asyncio.sleep(float(timer))
+        except FiatException as e:
+            await client.send_message(message.channel, e)
 
     async def process_command(self, config_data, client, message):
         """

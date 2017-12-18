@@ -1,15 +1,19 @@
 from coinmarketcap import Market
 
-fiat_currencies = [
-    "AUD", "BRL", "CAD", "CHF",
-    "CLP", "CNY", "CZK", "DKK",
-    "EUR", "GBP", "HKD", "HUF",
-    "IDR", "ILS", "INR", "JPY",
-    "KRW", "MXN", "MYR", "NOK",
-    "NZD", "PHP", "PKR", "PLN",
-    "RUB", "SEK", "SGD", "THB",
-    "TRY", "TWD", "ZAR"
-]
+fiat_currencies = {
+    'AUD': '$', 'BRL': 'R$', 'CAD': '$', 'CHF': 'Fr.',
+    'CLP': '$', 'CNY': '¥', 'CZK': 'Kc', 'DKK': 'kr',
+    'EUR': '€', 'GBP': '£', 'HKD': 'HK$', 'HUF': 'Ft',
+    'IDR': 'Rp ', 'ILS': '₪', 'INR': '₹', 'JPY': '¥‎',
+    'KRW': '₩', 'MXN': '$', 'MYR': 'RM', 'NOK': 'kr',
+    'NZD': '$', 'PHP': '₱', 'PKR': 'Rupees', 'PLN': 'zł',
+    'RUB': '₽', 'SEK': 'kr', 'SGD': 'S$', 'THB': '฿',
+    'TRY': '₺', 'TWD': 'NT$', 'ZAR': 'R ', 'USD': '$'
+}
+
+
+class FiatException(Exception):
+    """Exception class for incorrect fiat"""
 
 
 class CoinMarketException(Exception):
@@ -57,8 +61,8 @@ class CoinMarket:
                 isPositivePercent = False
 
             formatted_data += '__**#{}. {} ({})**__ {}\n'.format(data['rank'], data['name'], data['symbol'], hour_trend)
-            formatted_data += 'Price (USD): **${:,}**\n'.format(float(data['price_usd']))
-            formatted_data += 'Price (USD): **${:,}**\n'.format(float(data['price_btc']))
+            formatted_data += 'Price ({}): **{}{:,}**\n'.format(fiat, fiat_currencies[fiat], float(data['price_{}'.format(fiat.lower())]))
+            formatted_data += 'Price (BTC): **{:,}**\n'.format(float(data['price_btc']))
             if (data['market_cap_usd'] is None):
                 formatted_data += 'Market Cap (USD): Unknown\n'
             else:
@@ -75,7 +79,7 @@ class CoinMarket:
         except Exception as e:
             print("Failed to format data: " + e)
 
-    async def get_currency(self, currency: str, fiat: str):
+    async def get_currency(self, currency: str, fiat='USD'):
         """
         Obtains the data of the specified currency and returns them.
 
@@ -84,9 +88,16 @@ class CoinMarket:
         """
         isPositivePercent = False
         try:
+            if fiat is not fiat.upper():
+                fiat = fiat.upper()
+            if fiat not in fiat_currencies:
+                raise FiatException("This currency is not supported: " + fiat)
             data = self._fetch_currency_data(currency, fiat)[0]
             formatted_data, isPositivePercent = self._format_currency_data(data, currency, fiat)
+        except FiatException as e:
+            raise
         except Exception as e:
+            print(e)
             formatted_data = "Unable to find the currency specified: " + currency
         return formatted_data, isPositivePercent
 
@@ -131,7 +142,7 @@ class CoinMarket:
         except Exception as e:
             raise CoinMarketException(e)
 
-    async def get_live_data(self, currency_list, fiat: str):
+    async def get_live_data(self, currency_list, fiat='USD'):
         """
         Returns updated info of coin stats
 
@@ -139,8 +150,10 @@ class CoinMarket:
         @param fiat - desired currency (i.e. 'EUR', 'USD')
         """
         try:
+            if fiat is not fiat.upper():
+                fiat = fiat.upper()
             if fiat not in fiat_currencies:
-                raise CoinMarketException("This currency is not supported")
+                raise FiatException("This currency is not supported: " + fiat)
             formatted_data = ''
             data_list = []
             for currency in currency_list:
@@ -149,5 +162,7 @@ class CoinMarket:
             for data in data_list:
                 formatted_data += self._format_currency_data(data, currency, fiat)[0] + '\n'
             return formatted_data
+        except FiatException as e:
+            raise
         except Exception as e:
             raise CoinMarketException(e)
