@@ -88,7 +88,7 @@ class CoinMarket:
         except Exception as e:
             print("Failed to format data: " + e)
 
-    async def get_currency(self, currency: str, fiat='USD'):
+    async def get_currency(self, currency, fiat):
         """
         Obtains the data of the specified currency and returns them.
 
@@ -144,7 +144,7 @@ class CoinMarket:
         except Exception as e:
             print("Failed to format data: " + e)
 
-    async def get_stats(self, fiat='USD'):
+    async def get_stats(self, fiat):
         """
         Returns the market stats
 
@@ -163,7 +163,7 @@ class CoinMarket:
         except Exception as e:
             raise CoinMarketException(e)
 
-    async def get_live_data(self, currency_list, fiat='USD'):
+    async def get_live_data(self, currency_list, fiat):
         """
         Returns updated info of coin stats
 

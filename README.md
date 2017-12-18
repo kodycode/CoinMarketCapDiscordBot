@@ -21,7 +21,7 @@ This bot now also supports live status updates for cryptocurrencies with the `$l
 | $search or $s [CryptoCurrency to search for here (i.e. bitcoin)] [Currency to convert to (i.e. USD, EUR, etc.)] | Displays the data of the specified currency. |
 | $stats [Currency to convert to (i.e. USD, EUR, etc.)] | Displays the overall stats of the coin market |
 | $live [Currency to convert to (i.e. USD, EUR, etc.)] | Displays live updates of coin stats in n-second intervals (see Installation for more information) |
-| $help (temporarily unavailable) | Displays available commands and descriptions of them |
+| $help | Displays available commands and descriptions of them |
 
 ***Currencies supported:***
 
