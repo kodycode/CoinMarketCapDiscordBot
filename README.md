@@ -1,7 +1,7 @@
 # CoinMarketDiscordBot
 A Discord bot that reports data from https://coinmarketcap.com/
 
-Created with the python ![CoinMarketCap API](https://github.com/mrsmn/coinmarketcap-api) wrapper.
+Created with the python [CoinMarketCap API](https://github.com/mrsmn/coinmarketcap-api) wrapper.
 
 Click [here](https://discordapp.com/oauth2/authorize?&client_id=353373501274456065&scope=bot) to add the bot to your server.
 
@@ -18,9 +18,9 @@ This bot now also supports live status updates for cryptocurrencies with the `$l
 ## Commands:
 | Commands      | Output        |
 | ------------- |:-------------:|
-| $search [CryptoCurrency to search for here (i.e. bitcoin, ethereum)] [Currency to convert to (i.e. USD, EUR, etc.)] | Displays the data of the specified currency. |
-| $stats | Displays the overall stats of the coin market |
-| $live | Displays live updates of coin stats in n-second intervals (see Installation for more information) |
+| $search [CryptoCurrency to search for here (i.e. bitcoin)] [Currency to convert to (i.e. USD, EUR, etc.)] | Displays the data of the specified currency. |
+| $stats [Currency to convert to (i.e. USD, EUR, etc.)] | Displays the overall stats of the coin market |
+| $live [Currency to convert to (i.e. USD, EUR, etc.)] | Displays live updates of coin stats in n-second intervals (see Installation for more information) |
 | $help (temporarily unavailable) | Displays available commands and descriptions of them |
 
 ## TODO:
