@@ -68,7 +68,11 @@ class CoinMarketCommand:
         @param message - command received
         """
         try:
-            data = await self.coin_market.get_stats()
+            param = message.content.split()
+            if len(param) == 2:
+                data = await self.coin_market.get_stats(param[1])
+            else:
+                data = await self.coin_market.get_stats()
             em = discord.Embed(title="Market Stats",
                                description=data,
                                colour=0x008000)
@@ -98,7 +102,7 @@ class CoinMarketCommand:
                                                 limit=100)
                     except:
                         pass
-                    if param == 2:
+                    if len(param) == 2:
                         data = await self.coin_market.get_live_data(currency_list,
                                                                     param[1])
                     else:

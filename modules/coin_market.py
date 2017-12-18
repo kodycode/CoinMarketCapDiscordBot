@@ -110,18 +110,20 @@ class CoinMarket:
             formatted_data = "Unable to find the currency specified: " + currency
         return formatted_data, isPositivePercent
 
-    def _fetch_coinmarket_stats(self):
+    def _fetch_coinmarket_stats(self, fiat):
         """
         Fetches the coinmarket stats
 
+        @param fiat - desired currency (i.e. 'EUR', 'USD')
         @return - market stats
         """
-        return self.market.stats()
+        return self.market.stats(convert=fiat)
 
-    def _format_coinmarket_stats(self, stats):
+    def _format_coinmarket_stats(self, stats, fiat):
         """
         Receives and formats coinmarket stats
 
+        @param fiat - desired currency (i.e. 'EUR', 'USD')
         @return - formatted stats
         """
         try:
@@ -129,8 +131,10 @@ class CoinMarket:
             if (stats['total_market_cap_usd'] is None):
                 formatted_stats += "Total Market Cap (USD): Unknown"
             else:
-                formatted_stats += "Total Market Cap (USD): **${:,}**\n".format(float(stats['total_market_cap_usd']))
-
+                if fiat in fiat_suffix:
+                    formatted_stats += "Total Market Cap ({}): **{:,} {}**\n".format(fiat, float(stats['total_market_cap_{}'.format(fiat.lower())]), fiat_currencies[fiat])
+                else:
+                    formatted_stats += "Total Market Cap ({}): **{}{:,}**\n".format(fiat, fiat_currencies[fiat], float(stats['total_market_cap_{}'.format(fiat.lower())]))
             formatted_stats += "Bitcoin Percentage of Market: **{:,}%**\n".format(stats['bitcoin_percentage_of_market_cap'])
             formatted_stats += "Active Markets: **{:,}**\n".format(stats['active_markets'])
             formatted_stats += "Active Currencies: **{:,}**\n".format(stats['active_currencies'])
@@ -140,14 +144,22 @@ class CoinMarket:
         except Exception as e:
             print("Failed to format data: " + e)
 
-    async def get_stats(self):
+    async def get_stats(self, fiat='USD'):
         """
         Returns the market stats
+
+        @param fiat - desired currency (i.e. 'EUR', 'USD')
         """
         try:
-            stats = self._fetch_coinmarket_stats()
-            formatted_stats = self._format_coinmarket_stats(stats)
+            if fiat is not fiat.upper():
+                fiat = fiat.upper()
+            if fiat not in fiat_currencies:
+                raise FiatException("This currency is not supported: " + fiat)
+            stats = self._fetch_coinmarket_stats(fiat)
+            formatted_stats = self._format_coinmarket_stats(stats, fiat)
             return formatted_stats
+        except FiatException as e:
+            raise
         except Exception as e:
             raise CoinMarketException(e)
 
