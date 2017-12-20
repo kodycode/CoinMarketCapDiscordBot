@@ -17,19 +17,39 @@ class CoinMarketCommand:
         self.live_on = False
 
     async def display_search(self, currency, fiat):
+        """
+        Embeds search results and displays it in chat
+
+        @param currency - cryptocurrency to search for
+        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
+        """
         try:
-            data, isPositivePercent = await self.coin_market.get_currency(currency, fiat)
-            if isPositivePercent:
+            if ',' in currency:
+                if ' ' in currency:
+                    await self.bot.say("Don't include spaces in multi-coin search.")
+                    return
+                currency_list = currency.split(',')
+                data = await self.coin_market.get_multiple_currency(currency_list,
+                                                                    fiat)
                 em = discord.Embed(title="Search results",
                                    description=data,
-                                   colour=0x009993)
+                                   colour=0xFFD700)
             else:
-                em = discord.Embed(title="Search results",
-                                   description=data,
-                                   colour=0xD14836)
+                data, isPositivePercent = await self.coin_market.get_currency(currency, fiat)
+                if isPositivePercent:
+                    em = discord.Embed(title="Search results",
+                                       description=data,
+                                       colour=0x009993)
+                else:
+                    em = discord.Embed(title="Search results",
+                                       description=data,
+                                       colour=0xD14836)
             await self.bot.say(embed=em)
         except FiatException as e:
-            await self.bot.say(e)
+            error_msg = str(e)
+            error_msg += "\nIf you're doing multiple searches, please "
+            error_msg += "make sure there's no spaces after the comma."
+            await self.bot.say(error_msg)
 
     @commands.command(name='search')
     async def search(self, currency: str, fiat='USD'):
@@ -39,7 +59,7 @@ class CoinMarketCommand:
         "$search bitcoin"
 
         @param currency - cryptocurrency to search for
-        @param fiat - desired currency (i.e. 'EUR', 'USD')
+        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
         await self.display_search(currency, fiat)
 
@@ -51,7 +71,7 @@ class CoinMarketCommand:
         "$s bitcoin"
 
         @param currency - cryptocurrency to search for
-        @param fiat - desired currency (i.e. 'EUR', 'USD')
+        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
         await self.display_search(currency, fiat)
 
@@ -62,7 +82,7 @@ class CoinMarketCommand:
         An example for this command would be:
         "$stats"
 
-        @param fiat - desired currency (i.e. 'EUR', 'USD')
+        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
         try:
             data = await self.coin_market.get_stats(fiat)
@@ -80,7 +100,7 @@ class CoinMarketCommand:
         An example for this command would be:
         "$live"
 
-        @param fiat - desired currency (i.e. 'EUR', 'USD')
+        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
         try:
             currency_list = self.config_data['live_check_currency']
@@ -94,8 +114,8 @@ class CoinMarketCommand:
                                                   limit=100)
                     except:
                         pass
-                    data = await self.coin_market.get_live_data(currency_list,
-                                                                fiat)
+                    data = await self.coin_market.get_multiple_currency(currency_list,
+                                                                        fiat)
                     em = discord.Embed(title="Live Currency Update",
                                        description=data,
                                        colour=0xFFD700)

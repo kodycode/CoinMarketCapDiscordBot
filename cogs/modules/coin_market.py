@@ -38,22 +38,35 @@ class CoinMarket:
         """
         self.market = Market()
 
+    def _fiat_check(self, fiat):
+        """
+        Checks if fiat is valid. If invalid, raise FiatException error.
+
+        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
+        """
+        if fiat is not fiat.upper():
+            fiat = fiat.upper()
+        if fiat not in fiat_currencies:
+            error_msg = "This currency is not supported: {}.".format(fiat)
+            raise FiatException(error_msg)
+        return fiat
+
     def _fetch_currency_data(self, currency, fiat):
         """
         Fetches the currency data based on the desired currency
 
         @param currency - the cryptocurrency to search for (i.e. 'bitcoin', 'ethereum')
-        @param fiat - desired currency (i.e. 'EUR', 'USD')
+        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         @return - currency data
         """
         return self.market.ticker(currency, convert=fiat)
 
-    def _format_currency_data(self, data, currency, fiat):
+    def _format_currency_data(self, data, fiat):
         """
         Formats the data fetched
 
         @param currency - the cryptocurrency to search for (i.e. 'bitcoin', 'ethereum')
-        @param fiat - desired currency (i.e. 'EUR', 'USD')
+        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         @return - formatted currency data
         """
         try:
@@ -86,35 +99,32 @@ class CoinMarket:
 
             return formatted_data, isPositivePercent
         except Exception as e:
-            print("Failed to format data: " + e)
+            print("Failed to format data: {}".format(e))
 
     async def get_currency(self, currency, fiat):
         """
         Obtains the data of the specified currency and returns them.
 
         @param currency - the cryptocurrency to search for (i.e. 'bitcoin', 'ethereum')
-        @param fiat - desired currency (i.e. 'EUR', 'USD')
+        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
-        isPositivePercent = False
         try:
-            if fiat is not fiat.upper():
-                fiat = fiat.upper()
-            if fiat not in fiat_currencies:
-                raise FiatException("This currency is not supported: " + fiat)
+            isPositivePercent = False
+            fiat = self._fiat_check(fiat)
             data = self._fetch_currency_data(currency, fiat)[0]
-            formatted_data, isPositivePercent = self._format_currency_data(data, currency, fiat)
+            formatted_data, isPositivePercent = self._format_currency_data(data, fiat)
         except FiatException as e:
             raise
         except Exception as e:
             print(e)
-            formatted_data = "Unable to find the currency specified: " + currency
+            formatted_data = "Unable to find the currency specified: {}".format(currency)
         return formatted_data, isPositivePercent
 
     def _fetch_coinmarket_stats(self, fiat):
         """
         Fetches the coinmarket stats
 
-        @param fiat - desired currency (i.e. 'EUR', 'USD')
+        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         @return - market stats
         """
         return self.market.stats(convert=fiat)
@@ -123,7 +133,7 @@ class CoinMarket:
         """
         Receives and formats coinmarket stats
 
-        @param fiat - desired currency (i.e. 'EUR', 'USD')
+        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         @return - formatted stats
         """
         try:
@@ -142,19 +152,16 @@ class CoinMarket:
 
             return formatted_stats
         except Exception as e:
-            print("Failed to format data: " + e)
+            print("Failed to format data: {}".format(e))
 
     async def get_stats(self, fiat):
         """
         Returns the market stats
 
-        @param fiat - desired currency (i.e. 'EUR', 'USD')
+        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
         try:
-            if fiat is not fiat.upper():
-                fiat = fiat.upper()
-            if fiat not in fiat_currencies:
-                raise FiatException("This currency is not supported: " + fiat)
+            fiat = self._fiat_check(fiat)
             stats = self._fetch_coinmarket_stats(fiat)
             formatted_stats = self._format_coinmarket_stats(stats, fiat)
             return formatted_stats
@@ -163,25 +170,22 @@ class CoinMarket:
         except Exception as e:
             raise CoinMarketException(e)
 
-    async def get_live_data(self, currency_list, fiat):
+    async def get_multiple_currency(self, currency_list, fiat):
         """
-        Returns updated info of coin stats
+        Returns updated info of multiple coin stats
 
         @param currency_list - list of cryptocurrencies
-        @param fiat - desired currency (i.e. 'EUR', 'USD')
+        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
         try:
-            if fiat is not fiat.upper():
-                fiat = fiat.upper()
-            if fiat not in fiat_currencies:
-                raise FiatException("This currency is not supported: " + fiat)
+            fiat = self._fiat_check(fiat)
             formatted_data = ''
             data_list = []
             for currency in currency_list:
                 data_list.append(self._fetch_currency_data(currency, fiat)[0])
             data_list.sort(key=lambda x: int(x['rank']))
             for data in data_list:
-                formatted_data += self._format_currency_data(data, currency, fiat)[0] + '\n'
+                formatted_data += self._format_currency_data(data, fiat)[0] + '\n'
             return formatted_data
         except FiatException as e:
             raise
