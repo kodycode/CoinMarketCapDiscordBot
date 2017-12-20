@@ -16,12 +16,12 @@ This bot now also supports live status updates for cryptocurrencies with the `$l
 ***It's recommended that you make a separate channel specifically for this command for it will erase the messages within the channel with each iteration.***
 
 ## Commands:
-| Commands      | Output        |
-| ------------- |:-------------:|
-| $search or $s [CryptoCurrency to search for here (i.e. bitcoin)] [Currency to convert to (i.e. USD, EUR, etc.)] | Displays the data of the specified currency. |
-| $stats [Currency to convert to (i.e. USD, EUR, etc.)] | Displays the overall stats of the coin market |
-| $live [Currency to convert to (i.e. USD, EUR, etc.)] | Displays live updates of coin stats in n-second intervals (see Installation for more information) |
-| $help | Displays available commands and descriptions of them |
+| Commands      | Arguments | Output        |
+| ------------- | --------- | :------------:|
+| $search or $s | 1. Cryptocurrency to search for here (i.e. bitcoin).<br>For multiple searches, seperate each coin with a commma (i.e. bitcoin,ethereum,litecoin)<br><br>2. [(Optional) Currency to convert to (i.e. USD, EUR, etc.)] | Displays the data of the specified currency. |
+| $stats | (Optional) Currency to convert to (i.e. USD, EUR, etc.) | Displays the overall stats of the coin market |
+| $live | (Optional) Currency to convert to (i.e. USD, EUR, etc.) | Displays live updates of coin stats in n-second intervals (see Installation for more information) |
+| $help | | Displays available commands and descriptions of them |
 
 If no fiat currency is entered, the command will default to display in USD.
 
