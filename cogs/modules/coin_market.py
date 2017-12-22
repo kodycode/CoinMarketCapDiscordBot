@@ -1,3 +1,4 @@
+from bot_logger import logger
 from coinmarketcap import Market
 
 fiat_currencies = {
@@ -22,16 +23,16 @@ class CurrencyException(Exception):
     """Exception class for invalid currencies"""
 
 
+class CoinMarketException(Exception):
+    """Exception class for CoinMarket"""
+
+
 class FiatException(Exception):
     """Exception class for invalid fiat"""
 
 
 class MarketStatsException(Exception):
     """Exception class for invalid retrieval of market stats"""
-
-
-class CoinMarketException(Exception):
-    """Exception class for CoinMarket"""
 
 
 class CoinMarket:
@@ -59,16 +60,47 @@ class CoinMarket:
             raise FiatException(error_msg)
         return fiat
 
-    def _fetch_currency_data(self, currency, fiat):
+    def load_all_acronyms(self):
+        """
+        Loads all available acronyms for cryptocurrencies
+
+        @return - all cryptocurrency acronyms
+        """
+        try:
+            acronym_list = {}
+            duplicate_count = 0
+            data = self._fetch_currency_data(load_all=True)
+            for currency in data:
+                if currency['symbol'] in acronym_list:
+                    duplicate_count += 1
+                    logger.warning("There exists two of the same acronyms: "
+                                   "{} and {} found, but {} and {} already "
+                                   "exists. Skipping duplicate acronym {}.."
+                                   "".format(currency['symbol'],
+                                             currency['id'],
+                                             currency['symbol'],
+                                             acronym_list[currency['symbol']],
+                                             currency['id']))
+                else:
+                    acronym_list[currency['symbol']] = currency['id']
+            return acronym_list, duplicate_count
+        except Exception as e:
+            raise CoinMarketException("Failed to load all acronyms: {}".format(e))
+
+    def _fetch_currency_data(self, currency="", fiat="", load_all=False):
         """
         Fetches the currency data based on the desired currency
 
         @param currency - the cryptocurrency to search for (i.e. 'bitcoin',
                           'ethereum')
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
+        @param start - number for currency list to start with
+        @param limit - number for the amount of currencies to display
         @return - currency data
         """
         try:
+            if load_all:
+                return self.market.ticker(currency, start=0, limit=0)
             return self.market.ticker(currency, convert=fiat)
         except Exception:
             raise CurrencyException("Failed to find currency: `{}`. Check "
@@ -180,6 +212,7 @@ class CoinMarket:
         Returns the market stats
 
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
+        @return - formatted market stats
         """
         try:
             fiat = self._fiat_check(fiat)
@@ -199,6 +232,7 @@ class CoinMarket:
 
         @param currency_list - list of cryptocurrencies
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
+        @return - formatted cryptocurrency data
         """
         try:
             fiat = self._fiat_check(fiat)

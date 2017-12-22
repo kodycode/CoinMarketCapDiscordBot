@@ -16,6 +16,27 @@ class CoinMarketCommand:
         self.bot = bot
         self.coin_market = CoinMarket()
         self.live_on = False
+        self.crypto_acronyms = None
+        if self.config_data['load_acronyms']:
+            print("Loading cryptocurrency acronyms..")
+            self.acronym_list = self._load_acronyms()
+
+    def _load_acronyms(self):
+        """
+        Loads all acronyms of existing crypto-coins out there
+        """
+        try:
+            acronym_list, duplicate_count = self.coin_market.load_all_acronyms()
+            print("Acronyms have successfully loaded.")
+            logger.info("Acronyms have successfully loaded.")
+            if duplicate_count > 0:
+                print("Found duplicate acronyms. Check error.log to see what "
+                      "duplicate acronymed coins were not included.\n")
+            return acronym_list
+        except CoinMarketException as e:
+            print("Failed to load cryptocurrency acronyms. See error.log.")
+            logger.error(str(e))
+            return None
 
     async def display_search(self, currency, fiat):
         """
