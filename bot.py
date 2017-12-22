@@ -43,7 +43,7 @@ def main():
     try:
         CoinMarketBot()
     except Exception as e:
-        logging.info('Bot failed to run: {}'.format(e))
+        logging.error('Bot failed to run: {}'.format(str(e)))
         print(e)
     logger.info("Bot is now offline.")
 
