@@ -1,5 +1,5 @@
 import logging
-# create logger
+
 logger = logging.getLogger('bot_logger')
 logger.setLevel(logging.DEBUG)
 ch = logging.FileHandler("error.log")
