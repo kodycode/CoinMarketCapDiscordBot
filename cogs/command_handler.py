@@ -1,7 +1,8 @@
-import discord
+from bot_logger import logger
+from cogs.modules.coin_market import CoinMarket, CoinMarketException, CurrencyException, FiatException, MarketStatsException
 from discord.ext import commands
-from cogs.modules.coin_market import CoinMarket, CurrencyException, FiatException, MarketStatsException
 import asyncio
+import discord
 import json
 
 
@@ -46,12 +47,18 @@ class CoinMarketCommand:
                                        colour=0xD14836)
             await self.bot.say(embed=em)
         except CurrencyException as e:
+            logger.error(str(e))
             await self.bot.say(e)
         except FiatException as e:
             error_msg = str(e)
             error_msg += "\nIf you're doing multiple searches, please "
             error_msg += "make sure there's no spaces after the comma."
+            logger.error(error_msg)
             await self.bot.say(error_msg)
+        except CoinMarketException as e:
+            logger.error(str(e))
+        except Exception as e:
+            logger.error(str(e))
 
     @commands.command(name='search')
     async def search(self, currency: str, fiat='USD'):
@@ -93,9 +100,15 @@ class CoinMarketCommand:
                                colour=0x008000)
             await self.bot.say(embed=em)
         except MarketStatsException as e:
+            logger.error(str(e))
             await self.bot.say(e)
         except FiatException as e:
+            logger.error(str(e))
             await self.bot.say(e)
+        except CoinMarketException as e:
+            logger.error(str(e))
+        except Exception as e:
+            logger.error(str(e))
 
     @commands.command(name='live')
     async def live(self, fiat='USD'):
@@ -127,11 +140,17 @@ class CoinMarketCommand:
                                                 embed=em)
                     await asyncio.sleep(float(timer))
         except CurrencyException as e:
+            logger.error(str(e))
             self.live_on = False
             await self.bot.say(e)
         except FiatException as e:
+            logger.error(str(e))
             self.live_on = False
             await self.bot.say(e)
+        except CoinMarketException as e:
+            logger.error(str(e))
+        except Exception as e:
+            logger.error(str(e))
 
 
 def setup(bot):

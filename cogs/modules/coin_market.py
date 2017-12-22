@@ -63,22 +63,24 @@ class CoinMarket:
         """
         Fetches the currency data based on the desired currency
 
-        @param currency - the cryptocurrency to search for (i.e. 'bitcoin', 'ethereum')
+        @param currency - the cryptocurrency to search for (i.e. 'bitcoin',
+                          'ethereum')
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         @return - currency data
         """
         try:
             return self.market.ticker(currency, convert=fiat)
         except Exception:
-            raise CurrencyException("Failed to find currency: {}. Check if "
-                                    "this currency is valid and also check for "
-                                    "spelling errors.".format(currency))
+            raise CurrencyException("Failed to find currency: `{}`. Check "
+                                    "if this currency is valid and also check "
+                                    "for spelling errors.".format(currency))
 
     def _format_currency_data(self, data, fiat):
         """
         Formats the data fetched
 
-        @param currency - the cryptocurrency to search for (i.e. 'bitcoin', 'ethereum')
+        @param currency - the cryptocurrency to search for (i.e. 'bitcoin',
+                          'ethereum')
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         @return - formatted currency data
         """
@@ -112,13 +114,14 @@ class CoinMarket:
 
             return formatted_data, isPositivePercent
         except Exception as e:
-            print("Failed to format data: {}".format(e))
+            raise CoinMarketException("Failed to format data: {}".format(e))
 
     async def get_currency(self, currency, fiat):
         """
         Obtains the data of the specified currency and returns them.
 
-        @param currency - the cryptocurrency to search for (i.e. 'bitcoin', 'ethereum')
+        @param currency - the cryptocurrency to search for (i.e. 'bitcoin',
+                          'ethereum')
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
         try:
@@ -170,7 +173,7 @@ class CoinMarket:
 
             return formatted_stats
         except Exception as e:
-            print("Failed to format data: {}".format(e))
+            raise CoinMarketException("Failed to format data: `{}`".format(e))
 
     async def get_stats(self, fiat):
         """

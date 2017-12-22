@@ -1,2 +1,4 @@
 __pycache__
 config.json
+error.log
+.vimrc

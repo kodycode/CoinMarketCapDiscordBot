@@ -1,5 +1,7 @@
 from discord.ext import commands
+from bot_logger import logger
 import json
+import logging
 
 bot = commands.Bot(command_prefix='$', description='Displays market data from https://coinmarketcap.com/')
 
@@ -26,9 +28,11 @@ class CoinMarketBot:
             try:
                 bot.load_extension(extension)
                 print('CoinMarketDiscordBot is online.')
+                print('Bot is currently running on {} servers.'.format(len(bot.servers)))
+                logger.info('Bot is online.')
             except Exception as e:
-                print('Failed to load extension {}\n{}: {}'.format(extension, type(e).__name__, e))
-                return
+                error_msg = 'Failed to load extension {}\n{}: {}'.format(extension, type(e).__name__, e)
+                logger.error(error_msg)
 
     @bot.event
     async def on_message(message):
@@ -39,7 +43,9 @@ def main():
     try:
         CoinMarketBot()
     except Exception as e:
+        logging.info('Bot failed to run: {}'.format(e))
         print(e)
+    logger.info("Bot is now offline.")
 
 
 main()
