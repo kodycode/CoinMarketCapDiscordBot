@@ -29,9 +29,6 @@ class CoinMarketCommand:
             acronym_list, duplicate_count = self.coin_market.load_all_acronyms()
             print("Acronyms have successfully loaded.")
             logger.info("Acronyms have successfully loaded.")
-            if duplicate_count > 0:
-                print("Found duplicate acronyms. Check error.log to see what "
-                      "duplicate acronymed coins were not included.\n")
             return acronym_list
         except CoinMarketException as e:
             print("Failed to load cryptocurrency acronyms. See error.log.")
@@ -51,13 +48,16 @@ class CoinMarketCommand:
                     await self.bot.say("Don't include spaces in multi-coin search.")
                     return
                 currency_list = currency.split(',')
-                data = await self.coin_market.get_multiple_currency(currency_list,
+                data = await self.coin_market.get_multiple_currency(self.acronym_list,
+                                                                    currency_list,
                                                                     fiat)
                 em = discord.Embed(title="Search results",
                                    description=data,
                                    colour=0xFFD700)
             else:
-                data, isPositivePercent = await self.coin_market.get_currency(currency, fiat)
+                data, isPositivePercent = await self.coin_market.get_currency(self.acronym_list,
+                                                                              currency,
+                                                                              fiat)
                 if isPositivePercent:
                     em = discord.Embed(title="Search results",
                                        description=data,
@@ -71,9 +71,9 @@ class CoinMarketCommand:
             logger.error(str(e))
             await self.bot.say(e)
         except FiatException as e:
-            error_msg = str(e)
-            error_msg += "\nIf you're doing multiple searches, please "
-            error_msg += "make sure there's no spaces after the comma."
+            error_msg = (str(e) +
+                         "\nIf you're doing multiple searches, please "
+                         "make sure there's no spaces after the comma.")
             logger.error(error_msg)
             await self.bot.say(error_msg)
         except CoinMarketException as e:

@@ -26,12 +26,14 @@ class CoinMarketBot:
     async def on_ready():
         for extension in initial_extensions:
             try:
+                logger.info('Starting bot..')
                 bot.load_extension(extension)
                 print('CoinMarketDiscordBot is online.')
                 print('Bot is currently running on {} servers.'.format(len(bot.servers)))
                 logger.info('Bot is online.')
             except Exception as e:
                 error_msg = 'Failed to load extension {}\n{}: {}'.format(extension, type(e).__name__, e)
+                print(error_msg)
                 logger.error(error_msg)
 
     @bot.event

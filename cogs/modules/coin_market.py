@@ -1,5 +1,6 @@
 from bot_logger import logger
 from coinmarketcap import Market
+import re
 
 fiat_currencies = {
     'AUD': '$', 'BRL': 'R$', 'CAD': '$', 'CHF': 'Fr.',
@@ -73,14 +74,25 @@ class CoinMarket:
             for currency in data:
                 if currency['symbol'] in acronym_list:
                     duplicate_count += 1
-                    logger.warning("There exists two of the same acronyms: "
-                                   "{} and {} found, but {} and {} already "
-                                   "exists. Skipping duplicate acronym {}.."
-                                   "".format(currency['symbol'],
-                                             currency['id'],
-                                             currency['symbol'],
-                                             acronym_list[currency['symbol']],
-                                             currency['id']))
+                    logger.warning("Found duplicate acronym. Creating seperate "
+                                   "separate definition...")
+                    if currency['symbol'] not in acronym_list[currency['symbol']]:
+                        acronym_list[currency['symbol'] + str(1)] = acronym_list[currency['symbol']]
+                        acronym_list[currency['symbol']] = ("Duplicate acronyms "
+                                                            "found. Possible "
+                                                            "searches are:\n"
+                                                            "{}1 ({})\n".format(currency['symbol'],
+                                                                                acronym_list[currency['symbol']]))
+                    dupe_acronym = re.search('\\d+', acronym_list[currency['symbol']])
+                    dupe_num = str(int(dupe_acronym.group(len(dupe_acronym.group()) - 1)) + 1)
+                    dupe_key = currency['symbol'] + dupe_num
+                    acronym_list[dupe_key] = currency['id']
+                    acronym_list[currency['symbol']] = (acronym_list[currency['symbol']]
+                                                        + "{} ({})".format(dupe_key,
+                                                                           currency['id']))
+                    dupe_msg = "Created duplicate acronym: {} ({})".format(dupe_key,
+                                                                           currency['id'])
+                    logger.info(dupe_msg)
                 else:
                     acronym_list[currency['symbol']] = currency['id']
             return acronym_list, duplicate_count
@@ -126,11 +138,18 @@ class CoinMarket:
                 hour_trend = ':arrow_lower_right:'
                 isPositivePercent = False
 
-            formatted_data += '__**#{}. {} ({})**__ {}\n'.format(data['rank'], data['name'], data['symbol'], hour_trend)
+            formatted_data += '__**#{}. {} ({})**__ {}\n'.format(data['rank'],
+                                                                 data['name'],
+                                                                 data['symbol'],
+                                                                 hour_trend)
             if fiat in fiat_suffix:
-                formatted_data += 'Price ({}): **{:,} {}**\n'.format(fiat, float(data['price_{}'.format(fiat.lower())]), fiat_currencies[fiat])
+                formatted_data += 'Price ({}): **{:,} {}**\n'.format(fiat,
+                                                                     float(data['price_{}'.format(fiat.lower())]),
+                                                                     fiat_currencies[fiat])
             else:
-                formatted_data += 'Price ({}): **{}{:,}**\n'.format(fiat, fiat_currencies[fiat], float(data['price_{}'.format(fiat.lower())]))
+                formatted_data += 'Price ({}): **{}{:,}**\n'.format(fiat,
+                                                                    fiat_currencies[fiat],
+                                                                    float(data['price_{}'.format(fiat.lower())]))
             formatted_data += 'Price (BTC): **{:,}**\n'.format(float(data['price_btc']))
             if (data['market_cap_usd'] is None):
                 formatted_data += 'Market Cap (USD): Unknown\n'
@@ -148,10 +167,11 @@ class CoinMarket:
         except Exception as e:
             raise CoinMarketException("Failed to format data: {}".format(e))
 
-    async def get_currency(self, currency, fiat):
+    async def get_currency(self, acronym_list, currency, fiat):
         """
         Obtains the data of the specified currency and returns them.
 
+        @param acronym_list - list of cryptocurrency acronyms
         @param currency - the cryptocurrency to search for (i.e. 'bitcoin',
                           'ethereum')
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
@@ -159,7 +179,14 @@ class CoinMarket:
         try:
             isPositivePercent = False
             fiat = self._fiat_check(fiat)
-            data = self._fetch_currency_data(currency, fiat)[0]
+            if currency.upper() in acronym_list:
+                try:
+                    data = self._fetch_currency_data(acronym_list[currency.upper()], fiat)[0]
+                except:
+                    formatted_data = acronym_list[currency.upper()]
+                    return formatted_data, isPositivePercent
+            else:
+                data = self._fetch_currency_data(currency, fiat)[0]
             formatted_data, isPositivePercent = self._format_currency_data(data, fiat)
             return formatted_data, isPositivePercent
         except CurrencyException as e:
@@ -195,9 +222,13 @@ class CoinMarket:
                 formatted_stats += "Total Market Cap (USD): Unknown"
             else:
                 if fiat in fiat_suffix:
-                    formatted_stats += "Total Market Cap ({}): **{:,} {}**\n".format(fiat, float(stats['total_market_cap_{}'.format(fiat.lower())]), fiat_currencies[fiat])
+                    formatted_stats += "Total Market Cap ({}): **{:,} {}**\n".format(fiat,
+                                                                                     float(stats['total_market_cap_{}'.format(fiat.lower())]),
+                                                                                     fiat_currencies[fiat])
                 else:
-                    formatted_stats += "Total Market Cap ({}): **{}{:,}**\n".format(fiat, fiat_currencies[fiat], float(stats['total_market_cap_{}'.format(fiat.lower())]))
+                    formatted_stats += "Total Market Cap ({}): **{}{:,}**\n".format(fiat,
+                                                                                    fiat_currencies[fiat],
+                                                                                    float(stats['total_market_cap_{}'.format(fiat.lower())]))
             formatted_stats += "Bitcoin Percentage of Market: **{:,}%**\n".format(stats['bitcoin_percentage_of_market_cap'])
             formatted_stats += "Active Markets: **{:,}**\n".format(stats['active_markets'])
             formatted_stats += "Active Currencies: **{:,}**\n".format(stats['active_currencies'])
