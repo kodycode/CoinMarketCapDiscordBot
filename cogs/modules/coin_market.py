@@ -106,8 +106,8 @@ class CoinMarket:
         @param currency - the cryptocurrency to search for (i.e. 'bitcoin',
                           'ethereum')
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
-        @param start - number for currency list to start with
-        @param limit - number for the amount of currencies to display
+        @param load_all - True: load all cryptocurrencies
+                          False: don't load all cryptocurrencies
         @return - currency data
         """
         try:
