@@ -182,7 +182,7 @@ class CoinMarket:
             if currency.upper() in acronym_list:
                 try:
                     data = self._fetch_currency_data(acronym_list[currency.upper()], fiat)[0]
-                except:
+                except CurrencyException:
                     formatted_data = acronym_list[currency.upper()]
                     return formatted_data, isPositivePercent
             else:
