@@ -77,8 +77,10 @@ class CoinMarketCommand:
             logger.error(error_msg)
             await self.bot.say(error_msg)
         except CoinMarketException as e:
+            print("An error has occured. See error.log.")
             logger.error(str(e))
         except Exception as e:
+            print("An error has occured. See error.log.")
             logger.error(str(e))
 
     @commands.command(name='search')
@@ -127,8 +129,10 @@ class CoinMarketCommand:
             logger.error(str(e))
             await self.bot.say(e)
         except CoinMarketException as e:
+            print("An error has occured. See error.log.")
             logger.error(str(e))
         except Exception as e:
+            print("An error has occured. See error.log.")
             logger.error(str(e))
 
     @commands.command(name='live')
@@ -152,7 +156,8 @@ class CoinMarketCommand:
                                                   limit=100)
                     except:
                         pass
-                    data = await self.coin_market.get_multiple_currency(currency_list,
+                    data = await self.coin_market.get_multiple_currency(self.acronym_list,
+                                                                        currency_list,
                                                                         fiat)
                     em = discord.Embed(title="Live Currency Update",
                                        description=data,
@@ -169,8 +174,10 @@ class CoinMarketCommand:
             self.live_on = False
             await self.bot.say(e)
         except CoinMarketException as e:
+            print("An error has occured. See error.log.")
             logger.error(str(e))
         except Exception as e:
+            print("An error has occured. See error.log.")
             logger.error(str(e))
 
 

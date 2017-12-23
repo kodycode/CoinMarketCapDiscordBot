@@ -257,10 +257,11 @@ class CoinMarket:
         except Exception as e:
             raise CoinMarketException(e)
 
-    async def get_multiple_currency(self, currency_list, fiat):
+    async def get_multiple_currency(self, acronym_list, currency_list, fiat):
         """
         Returns updated info of multiple coin stats
 
+        @param acronym_list - list of cryptocurrency acronyms
         @param currency_list - list of cryptocurrencies
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         @return - formatted cryptocurrency data
@@ -270,7 +271,13 @@ class CoinMarket:
             formatted_data = ''
             data_list = []
             for currency in currency_list:
-                data_list.append(self._fetch_currency_data(currency, fiat)[0])
+                if acronym_list is not None:
+                    if currency.upper() in acronym_list:
+                        data_list.append(self._fetch_currency_data(acronym_list[currency.upper()], fiat)[0])
+                    else:
+                        data_list.append(self._fetch_currency_data(currency, fiat)[0])
+                else:
+                    data_list.append(self._fetch_currency_data(currency, fiat)[0])
             data_list.sort(key=lambda x: int(x['rank']))
             for data in data_list:
                 formatted_data += self._format_currency_data(data, fiat)[0] + '\n'
