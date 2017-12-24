@@ -91,6 +91,21 @@ class CoinMarketCommand:
                                                  cost,
                                                  fiat)
 
+    @commands.command(name='cc')
+    async def cc(self, currency, currency_amt: float, fiat='USD'):
+        """
+        Displays conversion from coins to fiat.
+        An example for this command would be:
+        "$cc bitcoin 500"
+
+        @param currency - cryptocurrency that was bought
+        @param currency_amt - amount of currency coins
+        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
+        """
+        await self.cmd_function.calculate_coin_to_fiat(currency,
+                                                       currency_amt,
+                                                       fiat)
+
 
 class CoinMarketFunctionality:
     """
@@ -171,6 +186,45 @@ class CoinMarketFunctionality:
             print("An error has occured. See error.log.")
             logger.error("Exception: {}".format(str(e)))
 
+    async def calculate_coin_to_fiat(self, currency, currency_amt, fiat):
+        """
+        Calculates coin to fiat rate and displays it
+
+        @param currency - cryptocurrency that was bought
+        @param currency_amt - amount of currency coins
+        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
+        """
+        try:
+            ucase_fiat = self.coin_market.fiat_check(fiat)
+            if currency.upper() in self.acronym_list:
+                currency = self.acronym_list[currency.upper()]
+            data = self.coin_market.fetch_currency_data(currency, ucase_fiat)[0]
+            current_cost = float(data['price_{}'.format(fiat.lower())])
+            fiat_cost = self.coin_market.format_price(currency_amt*current_cost,
+                                                      fiat)
+            currency = currency.title()
+            result = "**{} {}** is worth **{}**".format(currency_amt,
+                                                        data['symbol'],
+                                                        str(fiat_cost))
+            em = discord.Embed(title="{}({}) to {}".format(currency,
+                                                           data['symbol'],
+                                                           fiat.upper()),
+                               description=result,
+                               colour=0xFFD700)
+            await self.bot.say(embed=em)
+        except CurrencyException as e:
+            logger.error("CurrencyException: {}".format(str(e)))
+            self.live_on = False
+            await self.bot.say(e)
+        except FiatException as e:
+            logger.error("FiatException: {}".format(str(e)))
+            self.live_on = False
+            await self.bot.say(e)
+        except Exception as e:
+            await self.bot.say("Command failed. Make sure the arguments are valid.")
+            print("An error has occured. See error.log.")
+            logger.error("Exception: {}".format(str(e)))
+
     async def calculate_profit(self, currency, currency_amt, cost, fiat):
         """
         Performs profit calculation operation and displays it
@@ -189,6 +243,7 @@ class CoinMarketFunctionality:
             initial_investment = float(currency_amt)*float(cost)
             profit = float((float(currency_amt)*current_cost) - initial_investment)
             overall_investment = float(initial_investment + profit)
+            currency = currency.title()
             formatted_initial_investment = self.coin_market.format_price(initial_investment,
                                                                          fiat)
             formatted_profit = self.coin_market.format_price(profit, fiat).replace('$-', '-$')
