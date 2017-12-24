@@ -32,7 +32,7 @@ class CoinMarketCommand:
             return acronym_list
         except CoinMarketException as e:
             print("Failed to load cryptocurrency acronyms. See error.log.")
-            logger.error(str(e))
+            logger.error("CoinMarketException: {}".format(str(e)))
             return None
 
     async def display_search(self, currency, fiat):
@@ -68,20 +68,20 @@ class CoinMarketCommand:
                                        colour=0xD14836)
             await self.bot.say(embed=em)
         except CurrencyException as e:
-            logger.error(str(e))
+            logger.error("CurrencyException: {}".format(str(e)))
             await self.bot.say(e)
         except FiatException as e:
             error_msg = (str(e) +
                          "\nIf you're doing multiple searches, please "
                          "make sure there's no spaces after the comma.")
-            logger.error(error_msg)
+            logger.error("FiatException: {}".format(str(e)))
             await self.bot.say(error_msg)
         except CoinMarketException as e:
             print("An error has occured. See error.log.")
-            logger.error(str(e))
+            logger.error("CoinMarketException: {}".format(str(e)))
         except Exception as e:
             print("An error has occured. See error.log.")
-            logger.error(str(e))
+            logger.error("Exception: {}".format(str(e)))
 
     @commands.command(name='search')
     async def search(self, currency: str, fiat='USD'):
@@ -95,7 +95,7 @@ class CoinMarketCommand:
         """
         await self.display_search(currency, fiat)
 
-    @commands.command(name='s')
+    @commands.command(name='s', hidden=True)
     async def s(self, currency: str, fiat='USD'):
         """
         Shortcut for "$search" command.
@@ -123,17 +123,17 @@ class CoinMarketCommand:
                                colour=0x008000)
             await self.bot.say(embed=em)
         except MarketStatsException as e:
-            logger.error(str(e))
+            logger.error("MarketStatsException: {}".format(str(e)))
             await self.bot.say(e)
         except FiatException as e:
-            logger.error(str(e))
+            logger.error("FiatException: {}".format(str(e)))
             await self.bot.say(e)
         except CoinMarketException as e:
             print("An error has occured. See error.log.")
-            logger.error(str(e))
+            logger.error("CoinMarketException: {}".format(str(e)))
         except Exception as e:
             print("An error has occured. See error.log.")
-            logger.error(str(e))
+            logger.error("Exception: {}".format(str(e)))
 
     @commands.command(name='live')
     async def live(self, fiat='USD'):
@@ -166,19 +166,90 @@ class CoinMarketCommand:
                                                 embed=em)
                     await asyncio.sleep(float(timer))
         except CurrencyException as e:
-            logger.error(str(e))
+            logger.error("CurrencyException: {}".format(str(e)))
             self.live_on = False
             await self.bot.say(e)
         except FiatException as e:
-            logger.error(str(e))
+            logger.error("FiatException: {}".format(str(e)))
             self.live_on = False
             await self.bot.say(e)
         except CoinMarketException as e:
             print("An error has occured. See error.log.")
-            logger.error(str(e))
+            logger.error("CoinMarketException: {}".format(str(e)))
         except Exception as e:
             print("An error has occured. See error.log.")
-            logger.error(str(e))
+            logger.error("Exception: {}".format(str(e)))
+
+    async def calculate_profit(self, currency, currency_amt: float, cost: float, fiat):
+        """
+        Performs calculation operation
+
+        @param currency - cryptocurrency that was bought
+        @param currency_amt - amount of currency coins
+        @param cost - the price of the cryptocurrency bought at the time
+        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
+        """
+        try:
+            ucase_fiat = self.coin_market.fiat_check(fiat)
+            if currency.upper() in self.acronym_list:
+                currency = self.acronym_list[currency.upper()]
+            data = self.coin_market.fetch_currency_data(currency, ucase_fiat)[0]
+            current_cost = float(data['price_{}'.format(fiat.lower())])
+            initial_investment = float(currency_amt)*float(cost)
+            profit = float((float(currency_amt)*current_cost) - initial_investment)
+            overall_investment = float(initial_investment + profit)
+            formatted_initial_investment = self.coin_market.format_price(initial_investment,
+                                                                         fiat)
+            formatted_profit = self.coin_market.format_price(profit, fiat).replace('$-', '-$')
+            formatted_overall_investment = self.coin_market.format_price(overall_investment,
+                                                                         fiat)
+            msg = ("Initial Investment: **{}**\n"
+                   "Profit: **{}**\n"
+                   "Total investment worth: **{}**".format(formatted_initial_investment,
+                                                           formatted_profit,
+                                                           formatted_overall_investment))
+            em = discord.Embed(title="Profit calculated ({})".format(currency),
+                               description=msg,
+                               colour=0xFFD700)
+            await self.bot.say(embed=em)
+        except CurrencyException as e:
+            logger.error("CurrencyException: {}".format(str(e)))
+            self.live_on = False
+            await self.bot.say(e)
+        except FiatException as e:
+            logger.error("FiatException: {}".format(str(e)))
+            self.live_on = False
+            await self.bot.say(e)
+        except Exception as e:
+            await self.bot.say("Command failed. Make sure the arguments are valid.")
+            print("An error has occured. See error.log.")
+            logger.error("Exception: {}".format(str(e)))
+
+    @commands.command(name='profit')
+    async def profit(self, currency, currency_amt, cost, fiat='USD'):
+        """
+        Calculates profit made from buying cryptocurrency.
+        An example for this command would be:
+        "$profit bitcoin 500 999"
+
+        @param currency - cryptocurrency that was bought
+        @param currency_amt - amount of currency coins
+        @param cost - the price of the cryptocurrency bought at the time
+        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
+        """
+        await self.calculate_profit(currency, currency_amt, cost, fiat)
+
+    @commands.command(name='p', hidden=True)
+    async def p(self, currency, currency_amt, cost, fiat='USD'):
+        """
+        Shortcut for $profit command.
+
+        @param currency - cryptocurrency that was bought
+        @param currency_amt - amount of currency coins
+        @param cost - the price of the cryptocurrency bought at the time
+        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
+        """
+        await self.calculate_profit(currency, currency_amt, cost, fiat)
 
 
 def setup(bot):

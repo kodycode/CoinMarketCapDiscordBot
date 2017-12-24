@@ -48,18 +48,36 @@ class CoinMarket:
         """
         self.market = Market()
 
-    def _fiat_check(self, fiat):
+    def fiat_check(self, fiat):
         """
         Checks if fiat is valid. If invalid, raise FiatException error.
 
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
+        @return - uppercase fiat
         """
         if fiat is not fiat.upper():
             fiat = fiat.upper()
         if fiat not in fiat_currencies:
-            error_msg = "This currency is not supported: {}.".format(fiat)
+            error_msg = "This fiat currency is not supported: `{}`".format(fiat)
             raise FiatException(error_msg)
         return fiat
+
+    def format_price(self, price, fiat):
+        """
+        Formats price under the desired fiat
+
+        @param price - price to format
+        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
+        @return - formatted price under fiat
+        """
+        ucase_fiat = fiat.upper()
+        if ucase_fiat in fiat_suffix:
+            formatted_fiat = "{:,.2f} {}".format(float(price),
+                                                 fiat_currencies[ucase_fiat])
+        else:
+            formatted_fiat = "{}{:,.2f}".format(fiat_currencies[ucase_fiat],
+                                                float(price))
+        return formatted_fiat
 
     def load_all_acronyms(self):
         """
@@ -70,7 +88,7 @@ class CoinMarket:
         try:
             acronym_list = {}
             duplicate_count = 0
-            data = self._fetch_currency_data(load_all=True)
+            data = self.fetch_currency_data(load_all=True)
             for currency in data:
                 if currency['symbol'] in acronym_list:
                     duplicate_count += 1
@@ -99,7 +117,7 @@ class CoinMarket:
         except Exception as e:
             raise CoinMarketException("Failed to load all acronyms: {}".format(e))
 
-    def _fetch_currency_data(self, currency="", fiat="", load_all=False):
+    def fetch_currency_data(self, currency="", fiat="", load_all=False):
         """
         Fetches the currency data based on the desired currency
 
@@ -178,15 +196,15 @@ class CoinMarket:
         """
         try:
             isPositivePercent = False
-            fiat = self._fiat_check(fiat)
+            fiat = self.fiat_check(fiat)
             if currency.upper() in acronym_list:
                 try:
-                    data = self._fetch_currency_data(acronym_list[currency.upper()], fiat)[0]
+                    data = self.fetch_currency_data(acronym_list[currency.upper()], fiat)[0]
                 except CurrencyException:
                     formatted_data = acronym_list[currency.upper()]
                     return formatted_data, isPositivePercent
             else:
-                data = self._fetch_currency_data(currency, fiat)[0]
+                data = self.fetch_currency_data(currency, fiat)[0]
             formatted_data, isPositivePercent = self._format_currency_data(data, fiat)
             return formatted_data, isPositivePercent
         except CurrencyException as e:
@@ -246,7 +264,7 @@ class CoinMarket:
         @return - formatted market stats
         """
         try:
-            fiat = self._fiat_check(fiat)
+            fiat = self.fiat_check(fiat)
             stats = self._fetch_coinmarket_stats(fiat)
             formatted_stats = self._format_coinmarket_stats(stats, fiat)
             return formatted_stats
@@ -267,17 +285,17 @@ class CoinMarket:
         @return - formatted cryptocurrency data
         """
         try:
-            fiat = self._fiat_check(fiat)
+            fiat = self.fiat_check(fiat)
             formatted_data = ''
             data_list = []
             for currency in currency_list:
                 if acronym_list is not None:
                     if currency.upper() in acronym_list:
-                        data_list.append(self._fetch_currency_data(acronym_list[currency.upper()], fiat)[0])
+                        data_list.append(self.fetch_currency_data(acronym_list[currency.upper()], fiat)[0])
                     else:
-                        data_list.append(self._fetch_currency_data(currency, fiat)[0])
+                        data_list.append(self.fetch_currency_data(currency, fiat)[0])
                 else:
-                    data_list.append(self._fetch_currency_data(currency, fiat)[0])
+                    data_list.append(self.fetch_currency_data(currency, fiat)[0])
             data_list.sort(key=lambda x: int(x['rank']))
             for data in data_list:
                 formatted_data += self._format_currency_data(data, fiat)[0] + '\n'

@@ -40,6 +40,12 @@ class CoinMarketBot:
     async def on_message(message):
         await bot.process_commands(message)
 
+    @bot.event
+    async def on_command_error(error, ctx):
+        if isinstance(error, commands.errors.MissingRequiredArgument):
+            await bot.send_message(ctx.message.channel,
+                                   "Please enter all the necessary arguments.")
+
 
 def main():
     try:
