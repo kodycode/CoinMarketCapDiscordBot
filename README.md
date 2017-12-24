@@ -20,8 +20,9 @@ This bot now also supports live status updates for cryptocurrencies with the `$l
 ## Commands:
 | Commands      | Arguments | Output        |
 | ------------- | --------- | :------------:|
-| $search or $s | **1.** Cryptocurrency to search for (i.e. bitcoin).<br>For multiple searches, seperate each coin with a comma (i.e. bitcoin,ethereum,litecoin)<br>**2.** (Optional) Currency to convert to (i.e. USD, EUR, etc.) | Displays the data of the specified currency. |
+| $search or $s | **1.** Cryptocurrency to search for (i.e. bitcoin)<br>For multiple searches, seperate each coin with a comma (i.e. bitcoin,ethereum,litecoin)<br>**2.** (Optional) Currency to convert to (i.e. USD, EUR, etc.) | Displays the data of the specified currency. |
 | $profit or $p | **1.** Cryptocurrency to search for (i.e. bitcoin)<br>**2.** Amount of crypto coins(i.e. 500)<br>**3.** Cost of each crypto coin that was bought at (i.e. 43.99)<br>**4.** (Optional) Currency to convert to (i.e. USD, EUR, etc.) | Determines how much profit you've made based on the cryptocurrency you specify, the amount of coins that was bought, and the price of each coin |
+| $cc | **1.** Cryptocurrency to search for (i.e. bitcoin)<br>**2.** Amount of crypto coins(i.e. 500)<br>**3.** (Optional) Currency to convert to (i.e. USD, EUR, etc.) | Displays conversion results from an x amount of coins to fiat currency |
 | $stats | (Optional) Currency to convert to (i.e. USD, EUR, etc.) | Displays the overall stats of the coin market |
 | $live | (Optional) Currency to convert to (i.e. USD, EUR, etc.) | Displays live updates of coin stats in n-second intervals (see Installation for more information) |
 | $help | | Displays available commands and descriptions of them |
