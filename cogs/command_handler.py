@@ -203,14 +203,17 @@ class CoinMarketCommand:
             formatted_profit = self.coin_market.format_price(profit, fiat).replace('$-', '-$')
             formatted_overall_investment = self.coin_market.format_price(overall_investment,
                                                                          fiat)
-            msg = ("Initial Investment: **{}**\n"
+            msg = ("Initial Investment: **{}** (**{}** coin(s), costs **{}** each)\n"
                    "Profit: **{}**\n"
                    "Total investment worth: **{}**".format(formatted_initial_investment,
+                                                           currency_amt,
+                                                           cost,
                                                            formatted_profit,
                                                            formatted_overall_investment))
+            color = 0xD14836 if profit < 0 else 0x009993
             em = discord.Embed(title="Profit calculated ({})".format(currency),
                                description=msg,
-                               colour=0xFFD700)
+                               colour=color)
             await self.bot.say(embed=em)
         except CurrencyException as e:
             logger.error("CurrencyException: {}".format(str(e)))
