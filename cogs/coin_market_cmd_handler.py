@@ -106,6 +106,21 @@ class CoinMarketCommand:
                                                        currency_amt,
                                                        fiat)
 
+    @commands.command(name='cf')
+    async def cf(self, currency, price: float, fiat='USD'):
+        """
+        Displays conversion from fiat to coins.
+        An example for this command would be:
+        "$cf bitcoin 500"
+
+        @param currency - cryptocurrency that was bought
+        @param price - price amount you wish to convert to coins
+        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
+        """
+        await self.cmd_function.calculate_coin_to_fiat(currency,
+                                                       price,
+                                                       fiat)
+
 
 class CoinMarketFunctionality:
     """
@@ -209,6 +224,45 @@ class CoinMarketFunctionality:
             em = discord.Embed(title="{}({}) to {}".format(currency,
                                                            data['symbol'],
                                                            fiat.upper()),
+                               description=result,
+                               colour=0xFFD700)
+            await self.bot.say(embed=em)
+        except CurrencyException as e:
+            logger.error("CurrencyException: {}".format(str(e)))
+            self.live_on = False
+            await self.bot.say(e)
+        except FiatException as e:
+            logger.error("FiatException: {}".format(str(e)))
+            self.live_on = False
+            await self.bot.say(e)
+        except Exception as e:
+            await self.bot.say("Command failed. Make sure the arguments are valid.")
+            print("An error has occured. See error.log.")
+            logger.error("Exception: {}".format(str(e)))
+
+    async def calculate_fiat_to_coin(self, currency, price, fiat):
+        """
+        Calculates coin to fiat rate and displays it
+
+        @param currency - cryptocurrency that was bought
+        @param currency_amt - amount of currency coins
+        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
+        """
+        try:
+            ucase_fiat = self.coin_market.fiat_check(fiat)
+            if currency.upper() in self.acronym_list:
+                currency = self.acronym_list[currency.upper()]
+            data = self.coin_market.fetch_currency_data(currency, ucase_fiat)[0]
+            current_cost = float(data['price_{}'.format(fiat.lower())])
+            amt_of_coins = "{:.8f}".format(price/current_cost)
+            amt_of_coins = amt_of_coins.rstrip('0')
+            currency = currency.title()
+            result = "**{}** is worth **{} {}**".format(price,
+                                                        amt_of_coins,
+                                                        currency)
+            em = discord.Embed(title="{} to {}({})".format(fiat.upper(),
+                                                           currency,
+                                                           data['symbol']),
                                description=result,
                                colour=0xFFD700)
             await self.bot.say(embed=em)
