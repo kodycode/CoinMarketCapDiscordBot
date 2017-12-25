@@ -117,7 +117,7 @@ class CoinMarketCommand:
         @param price - price amount you wish to convert to coins
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
-        await self.cmd_function.calculate_coin_to_fiat(currency,
+        await self.cmd_function.calculate_fiat_to_coin(currency,
                                                        price,
                                                        fiat)
 
@@ -256,6 +256,7 @@ class CoinMarketFunctionality:
             current_cost = float(data['price_{}'.format(fiat.lower())])
             amt_of_coins = "{:.8f}".format(price/current_cost)
             amt_of_coins = amt_of_coins.rstrip('0')
+            price = self.coin_market.format_price(price, fiat)
             currency = currency.title()
             result = "**{}** is worth **{} {}**".format(price,
                                                         amt_of_coins,
