@@ -67,8 +67,6 @@ class CoinMarketCommand:
         "$sub"
 
         @param ctx - context of the command sent
-        @param option - options to choose when posting live
-                        updates
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
         await self.cmd_function.add_subscriber(ctx, fiat)
@@ -76,7 +74,7 @@ class CoinMarketCommand:
     @commands.command(name='unsub', pass_context=True)
     async def unsubscribe(self, ctx):
         """
-        Subscribes the channel to live updates.
+        Unsubscribes the channel from live updates.
         An example for this command would be:
         "$sub"
 
@@ -450,7 +448,10 @@ class CoinMarketFunctionality:
 
     async def add_subscriber(self, ctx, fiat):
         """
-        Adds channel to live update subscriber list
+        Adds channel to the live update subscriber list in config.json
+
+        @param ctx - context of the command sent
+        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
         try:
             ucase_fiat = self.coin_market.fiat_check(fiat)
@@ -474,6 +475,11 @@ class CoinMarketFunctionality:
             logger.error("Exception: {}".format(str(e)))
 
     async def remove_subscriber(self, ctx):
+        """
+        Removes channel from the subscriber list in config.json
+
+        @param ctx - context of the command sent
+        """
         try:
             channel = ctx.message.channel.id
             subscriber_list = self.config_data["subscriber_list"][0]
@@ -491,6 +497,12 @@ class CoinMarketFunctionality:
             logger.error("Exception: {}".format(str(e)))
 
     async def add_currency(self, ctx, currency):
+        """
+        Adds a cryptocurrency to the subscriber settings
+
+        @param ctx - context of the command sent
+        @param currency - the cryptocurrency to add
+        """
         try:
             if currency.upper() in self.acronym_list:
                 currency = self.acronym_list[currency.upper()]
@@ -524,6 +536,12 @@ class CoinMarketFunctionality:
             logger.error("Exception: {}".format(str(e)))
 
     async def remove_currency(self, ctx, currency):
+        """
+        Removes a cryptocurrency from the subscriber settings
+
+        @param ctx - context of the command sent
+        @param currency - the cryptocurrency to remove
+        """
         try:
             if currency.upper() in self.acronym_list:
                 currency = self.acronym_list[currency.upper()]
