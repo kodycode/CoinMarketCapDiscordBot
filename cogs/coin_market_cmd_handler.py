@@ -59,8 +59,55 @@ class CoinMarketCommand:
         """
         await self.cmd_function.display_live_data(fiat)
 
+    @commands.command(name='sub', pass_context=True)
+    async def subscribe(self, ctx, fiat='USD'):
+        """
+        Subscribes the channel to live updates.
+        An example for this command would be:
+        "$sub"
+
+        @param ctx - context of the command sent
+        @param option - options to choose when posting live
+                        updates
+        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
+        """
+        await self.cmd_function.add_subscriber(ctx, fiat)
+
+    @commands.command(name='unsub', pass_context=True)
+    async def unsubscribe(self, ctx):
+        """
+        Subscribes the channel to live updates.
+        An example for this command would be:
+        "$sub"
+
+        @param ctx - context of the command sent
+        """
+        await self.cmd_function.remove_subscriber(ctx)
+
+    @commands.command(name='addc', pass_context=True)
+    async def addc(self, ctx, currency: str):
+        """
+        Adds a cryptocurrency to display in live updates
+        An example for this command would be:
+        "$addc bitcoin"
+
+        @param ctx - context of the command sent
+        """
+        await self.cmd_function.add_currency(ctx, currency)
+
+    @commands.command(name='remc', pass_context=True)
+    async def remc(self, ctx, currency: str):
+        """
+        Removes a cryptocurrency from being displayed in live updates
+        An example for this command would be:
+        "$remc bitcoin"
+
+        @param ctx - context of the command sent
+        """
+        await self.cmd_function.remove_currency(ctx, currency)
+
     @commands.command(name='profit')
-    async def profit(self, currency, currency_amt: float, cost: float, fiat='USD'):
+    async def profit(self, currency: str, currency_amt: float, cost: float, fiat='USD'):
         """
         Calculates and displays profit made from buying cryptocurrency.
         An example for this command would be:
@@ -77,7 +124,7 @@ class CoinMarketCommand:
                                                  fiat)
 
     @commands.command(name='p', hidden=True)
-    async def p(self, currency, currency_amt: float, cost: float, fiat='USD'):
+    async def p(self, currency: str, currency_amt: float, cost: float, fiat='USD'):
         """
         Shortcut for $profit command.
 
@@ -92,7 +139,7 @@ class CoinMarketCommand:
                                                  fiat)
 
     @commands.command(name='cc')
-    async def cc(self, currency, currency_amt: float, fiat='USD'):
+    async def cc(self, currency: str, currency_amt: float, fiat='USD'):
         """
         Displays conversion from coins to fiat.
         An example for this command would be:
@@ -107,7 +154,7 @@ class CoinMarketCommand:
                                                        fiat)
 
     @commands.command(name='cf')
-    async def cf(self, currency, price: float, fiat='USD'):
+    async def cf(self, currency: str, price: float, fiat='USD'):
         """
         Displays conversion from fiat to coins.
         An example for this command would be:
@@ -363,25 +410,25 @@ class CoinMarketFunctionality:
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
         try:
-            currency_list = self.config_data['live_check_currency']
-            live_channel = self.config_data['live_channel']
+            subscriber_list = self.config_data["subscriber_list"][0]
             timer = self.config_data['live_update_interval']
             if not self.live_on:
                 self.live_on = True
                 while True:
-                    try:
-                        await self.bot.purge_from(self.bot.get_channel(live_channel),
-                                                  limit=100)
-                    except:
-                        pass
                     data = await self.coin_market.get_multiple_currency(self.acronym_list,
                                                                         currency_list,
                                                                         fiat)
-                    em = discord.Embed(title="Live Currency Update",
-                                       description=data,
-                                       colour=0xFFD700)
-                    await self.bot.send_message(self.bot.get_channel(live_channel),
-                                                embed=em)
+                    for channel in subscriber_list:
+                        try:
+                            await self.bot.purge_from(self.bot.get_channel(channel),
+                                                      limit=1)
+                        except:
+                            pass
+                        em = discord.Embed(title="Live Currency Update",
+                                           description=data,
+                                           colour=0xFFD700)
+                        await self.bot.send_message(self.bot.get_channel(channel),
+                                                    embed=em)
                     await asyncio.sleep(float(timer))
             else:
                 await self.bot.say("Live updates are already on.")
@@ -396,6 +443,112 @@ class CoinMarketFunctionality:
         except CoinMarketException as e:
             print("An error has occured. See error.log.")
             logger.error("CoinMarketException: {}".format(str(e)))
+        except Exception as e:
+            if not str(e).decode('utf-8').isspace():
+                print("An error has occured. See error.log.")
+                logger.error("Exception: {}".format(str(e)))
+
+    async def add_subscriber(self, ctx, fiat):
+        """
+        Adds channel to live update subscriber list
+        """
+        try:
+            ucase_fiat = self.coin_market.fiat_check(fiat)
+            channel = str(ctx.message.channel.id)
+            subscriber_list = self.config_data["subscriber_list"][0]
+            if channel not in subscriber_list:
+                subscriber_list[channel] = [{}]
+                channel_settings = subscriber_list[channel][0]
+                channel_settings["purge"] = False
+                channel_settings["fiat"] = ucase_fiat
+                channel_settings["currencies"] = []
+                with open('config.json', 'w') as outfile:
+                    json.dump(self.config_data,
+                              outfile,
+                              indent=4)
+                await self.bot.say("Channel has succcesfully subscribed.")
+            else:
+                await self.bot.say("Channel is already subscribed.")
+        except Exception as e:
+            print("An error has occured. See error.log.")
+            logger.error("Exception: {}".format(str(e)))
+
+    async def remove_subscriber(self, ctx):
+        try:
+            channel = ctx.message.channel.id
+            subscriber_list = self.config_data["subscriber_list"][0]
+            if channel in subscriber_list:
+                subscriber_list.pop(channel)
+                with open('config.json', 'w') as outfile:
+                    json.dump(self.config_data,
+                              outfile,
+                              indent=4)
+                await self.bot.say("Channel has unsubscribed.")
+            else:
+                await self.bot.say("Channel was never subscribed.")
+        except Exception as e:
+            print("An error has occured. See error.log.")
+            logger.error("Exception: {}".format(str(e)))
+
+    async def add_currency(self, ctx, currency):
+        try:
+            if currency.upper() in self.acronym_list:
+                currency = self.acronym_list[currency.upper()]
+                if "Duplicate" in currency:
+                    await self.bot.say(currency)
+                    return
+            self.coin_market.fetch_currency_data(currency)  # validate currency
+            channel = ctx.message.channel.id
+            subscriber_list = self.config_data["subscriber_list"][0]
+            if channel in subscriber_list:
+                channel_settings = subscriber_list[channel][0]
+                if currency in channel_settings["currencies"]:
+                    await self.bot.say("``{}`` is already added.".format(currency.title()))
+                    return
+                channel_settings["currencies"].append(currency)
+                with open('config.json', 'w') as outfile:
+                    json.dump(self.config_data,
+                              outfile,
+                              indent=4)
+                await self.bot.say("``{}`` was successfully added.".format(currency.title()))
+            else:
+                await self.bot.say("The channel needs to be subscribed first.")
+        except CurrencyException as e:
+            logger.error("CurrencyException: {}".format(str(e)))
+            await self.bot.say(e)
+        except CoinMarketException as e:
+            print("An error has occured. See error.log.")
+            logger.error("CoinMarketException: {}".format(str(e)))
+        except Exception as e:
+            print("An error has occured. See error.log.")
+            logger.error("Exception: {}".format(str(e)))
+
+    async def remove_currency(self, ctx, currency):
+        try:
+            if currency.upper() in self.acronym_list:
+                currency = self.acronym_list[currency.upper()]
+                if "Duplicate" in currency:
+                    await self.bot.say(currency)
+                    return
+            channel = ctx.message.channel.id
+            subscriber_list = self.config_data["subscriber_list"][0]
+            if channel in subscriber_list:
+                channel_settings = subscriber_list[channel][0]
+                if currency in channel_settings["currencies"]:
+                    channel_settings["currencies"].remove(currency)
+                    with open('config.json', 'w') as outfile:
+                        json.dump(self.config_data,
+                                  outfile,
+                                  indent=4)
+                    await self.bot.say("``{}`` was successfully removed.".format(currency.title()))
+                    return
+                else:
+                    await self.bot.say("``{}`` was never added or is invalid.".format(currency.title()))
+            else:
+                await self.bot.say("The channel needs to be subscribed first.")
+        except CurrencyException as e:
+            logger.error("CurrencyException: {}".format(str(e)))
+            await self.bot.say(e)
         except Exception as e:
             print("An error has occured. See error.log.")
             logger.error("Exception: {}".format(str(e)))
