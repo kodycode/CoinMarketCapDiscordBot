@@ -12,8 +12,8 @@ class CoinMarketCommands:
     """
     Handles all CMC related commands
     """
-    def __init__(self, bot):
-        self.cmd_function = CoinMarketFunctionality(bot)
+    def __init__(self, cmd_function):
+        self.cmd_function = cmd_function
 
     @commands.command(name='search')
     async def search(self, currency: str, fiat='USD'):
@@ -112,6 +112,14 @@ class CoinMarketCommands:
                                                        price,
                                                        fiat)
 
+
+class SubscriberCommands:
+    """
+    Handles Subscriber commands for live updates
+    """
+    def __init__(self, cmd_function):
+        self.cmd_function = cmd_function
+
     @commands.command(name='sub', pass_context=True)
     async def subscribe(self, ctx, fiat='USD'):
         """
@@ -194,7 +202,7 @@ class CoinMarketFunctionality:
             time = datetime.datetime.now()
             if time.minute % 5 == 0:
                 yield from self._update_data()
-        yield from asyncio.sleep(60)
+            yield from asyncio.sleep(60)
 
     def _update_market(self):
         """
@@ -204,7 +212,10 @@ class CoinMarketFunctionality:
         """
         try:
             data = self.coin_market.fetch_currency_data(load_all=True)
-            self.market_list = data
+            market_dict = {}
+            for currency in data:
+                market_dict[currency['id']] = currency
+            self.market_list = market_dict
         except CurrencyException as e:
             print("An error has occured. See error.log.")
             logger.error("Exception: {}".format(str(e)))
@@ -220,28 +231,26 @@ class CoinMarketFunctionality:
                 raise Exception("Market list was not loaded.")
             acronym_list = {}
             duplicate_count = 0
-            for currency in self.market_list:
-                if currency['symbol'] in acronym_list:
+            for currency, data in self.market_list.items():
+                if data['symbol'] in acronym_list:
                     duplicate_count += 1
-                    logger.warning("Found duplicate acronym. Creating seperate "
-                                   "separate definition...")
-                    if currency['symbol'] not in acronym_list[currency['symbol']]:
-                        acronym_list[currency['symbol'] + str(1)] = acronym_list[currency['symbol']]
-                        acronym_list[currency['symbol']] = ("Duplicate acronyms "
-                                                            "found. Possible "
-                                                            "searches are:\n"
-                                                            "{}1 ({})\n".format(currency['symbol'],
-                                                                                acronym_list[currency['symbol']]))
-                    dupe_acronym = re.search('\\d+', acronym_list[currency['symbol']])
+                    if data['symbol'] not in acronym_list[data['symbol']]:
+                        acronym_list[data['symbol'] + str(1)] = acronym_list[data['symbol']]
+                        acronym_list[data['symbol']] = ("Duplicate acronyms "
+                                                        "found. Possible "
+                                                        "searches are:\n"
+                                                        "{}1 ({})\n".format(data['symbol'],
+                                                                            acronym_list[data['symbol']]))
+                    dupe_acronym = re.search('\\d+', acronym_list[data['symbol']])
                     dupe_num = str(int(dupe_acronym.group(len(dupe_acronym.group()) - 1)) + 1)
-                    dupe_key = currency['symbol'] + dupe_num
-                    acronym_list[dupe_key] = currency['id']
-                    acronym_list[currency['symbol']] = (acronym_list[currency['symbol']]
-                                                        + "{} ({})".format(dupe_key,
-                                                                           currency['id']))
+                    dupe_key = data['symbol'] + dupe_num
+                    acronym_list[dupe_key] = currency
+                    acronym_list[data['symbol']] = (acronym_list[data['symbol']]
+                                                    + "{} ({})".format(dupe_key,
+                                                                       currency))
                 else:
-                    acronym_list[currency['symbol']] = currency['id']
-                return acronym_list
+                    acronym_list[data['symbol']] = currency
+            return acronym_list
         except Exception as e:
             print("Failed to load cryptocurrency acronyms. See error.log.")
             logger.error("Exception: {}".format(str(e)))
@@ -259,16 +268,18 @@ class CoinMarketFunctionality:
                     await self.bot.say("Don't include spaces in multi-coin search.")
                     return
                 currency_list = currency.split(',')
-                data = await self.coin_market.get_multiple_currency(self.acronym_list,
-                                                                    currency_list,
-                                                                    fiat)
+                data = await self.coin_market.get_current_multiple_currency(self.market_list,
+                                                                            self.acronym_list,
+                                                                            currency_list,
+                                                                            fiat)
                 em = discord.Embed(title="Search results",
                                    description=data,
                                    colour=0xFFD700)
             else:
-                data, isPositivePercent = await self.coin_market.get_currency(self.acronym_list,
-                                                                              currency,
-                                                                              fiat)
+                data, isPositivePercent = await self.coin_market.get_current_currency(self.market_list,
+                                                                                      self.acronym_list,
+                                                                                      currency,
+                                                                                      fiat)
                 if isPositivePercent:
                     em = discord.Embed(title="Search results",
                                        description=data,
@@ -334,9 +345,10 @@ class CoinMarketFunctionality:
                                                       limit=10)
                         except:
                             pass
-                    data = await self.coin_market.get_multiple_currency(self.acronym_list,
-                                                                        channel_settings["currencies"],
-                                                                        channel_settings["fiat"])
+                    data = await self.coin_market.get_current_multiple_currency(self.market_list,
+                                                                                self.acronym_list,
+                                                                                channel_settings["currencies"],
+                                                                                channel_settings["fiat"])
                     em = discord.Embed(title="Live Currency Update",
                                        description=data,
                                        colour=0xFFD700)
@@ -354,9 +366,8 @@ class CoinMarketFunctionality:
             print("An error has occured. See error.log.")
             logger.error("CoinMarketException: {}".format(str(e)))
         except Exception as e:
-            if not str(e).decode('utf-8').isspace():
-                print("An error has occured. See error.log.")
-                logger.error("Exception: {}".format(str(e)))
+            print("An error has occured. See error.log.")
+            logger.error("Exception: {}".format(str(e)))
 
     async def calculate_coin_to_fiat(self, currency, currency_amt, fiat):
         """
@@ -367,10 +378,10 @@ class CoinMarketFunctionality:
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
         try:
-            ucase_fiat = self.coin_market.fiat_check(fiat)
+            # ucase_fiat = self.coin_market.fiat_check(fiat)
             if currency.upper() in self.acronym_list:
                 currency = self.acronym_list[currency.upper()]
-            data = self.coin_market.fetch_currency_data(currency, ucase_fiat)[0]
+            data = self.market_list[currency]
             current_cost = float(data['price_{}'.format(fiat.lower())])
             fiat_cost = self.coin_market.format_price(currency_amt*current_cost,
                                                       fiat)
@@ -406,10 +417,10 @@ class CoinMarketFunctionality:
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
         try:
-            ucase_fiat = self.coin_market.fiat_check(fiat)
+            # ucase_fiat = self.coin_market.fiat_check(fiat)
             if currency.upper() in self.acronym_list:
                 currency = self.acronym_list[currency.upper()]
-            data = self.coin_market.fetch_currency_data(currency, ucase_fiat)[0]
+            data = self.market_list[currency]
             current_cost = float(data['price_{}'.format(fiat.lower())])
             amt_of_coins = "{:.8f}".format(price/current_cost)
             amt_of_coins = amt_of_coins.rstrip('0')
@@ -447,10 +458,10 @@ class CoinMarketFunctionality:
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
         try:
-            ucase_fiat = self.coin_market.fiat_check(fiat)
+            # ucase_fiat = self.coin_market.fiat_check(fiat)
             if currency.upper() in self.acronym_list:
                 currency = self.acronym_list[currency.upper()]
-            data = self.coin_market.fetch_currency_data(currency, ucase_fiat)[0]
+            data = self.market_list[currency]
             current_cost = float(data['price_{}'.format(fiat.lower())])
             initial_investment = float(currency_amt)*float(cost)
             profit = float((float(currency_amt)*current_cost) - initial_investment)
@@ -568,7 +579,8 @@ class CoinMarketFunctionality:
                 if "Duplicate" in currency:
                     await self.bot.say(currency)
                     return
-            self.coin_market.fetch_currency_data(currency)  # validate currency
+            if currency not in self.market_list:
+                raise CurrencyException("Currency is invalid: {}".format(currency))
             channel = ctx.message.channel.id
             subscriber_list = self.config_data["subscriber_list"][0]
             if channel in subscriber_list:
@@ -632,4 +644,6 @@ class CoinMarketFunctionality:
 
 
 def setup(bot):
-    bot.add_cog(CoinMarketCommands(bot))
+    cmd_function = CoinMarketFunctionality(bot)
+    bot.add_cog(CoinMarketCommands(cmd_function))
+    bot.add_cog(SubscriberCommands(cmd_function))
