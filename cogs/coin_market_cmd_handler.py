@@ -335,6 +335,7 @@ class CoinMarketFunctionality:
         Obtains and displays live updates of coin stats in n-second intervals.
         """
         try:
+            remove_channels = []
             subscriber_list = self.config_data["subscriber_list"][0]
             for channel in subscriber_list:
                 channel_settings = subscriber_list[channel][0]
@@ -352,8 +353,21 @@ class CoinMarketFunctionality:
                     em = discord.Embed(title="Live Currency Update",
                                        description=data,
                                        colour=0xFFD700)
-                    await self.bot.send_message(self.bot.get_channel(channel),
-                                                embed=em)
+                    try:
+                        await self.bot.send_message(self.bot.get_channel(channel),
+                                                    embed=em)
+                    except Exception:
+                        remove_channels.append(channel)
+                        logger.error("Something went wrong with this channel. "
+                                     "This channel will now be removed.")
+            if remove_channels:
+                for channel in remove_channels:
+                    if channel in subscriber_list:
+                        subscriber_list.pop(channel)
+                        with open('config.json', 'w') as outfile:
+                            json.dump(self.config_data,
+                                      outfile,
+                                      indent=4)
         except CurrencyException as e:
             logger.error("CurrencyException: {}".format(str(e)))
             self.live_on = False
@@ -551,20 +565,28 @@ class CoinMarketFunctionality:
         """
         Turns purge mode on/off for the channel
         """
-        channel = ctx.message.channel.id
-        subscriber_list = self.config_data["subscriber_list"][0]
-        channel_settings = subscriber_list[channel][0]
-        channel_settings["purge"] = not channel_settings["purge"]
-        with open('config.json', 'w') as outfile:
-            json.dump(self.config_data,
-                      outfile,
-                      indent=4)
-        if channel_settings["purge"]:
-            await self.bot.say("Purge mode on. Bot will now purge messages upon"
-                               " live updates. Please make sure your bot has "
-                               "the right permissions to remove messages.")
-        else:
-            await self.bot.say("Purge mode off.")
+        try:
+            channel = ctx.message.channel.id
+            subscriber_list = self.config_data["subscriber_list"][0]
+            self.bot.get_channel(channel).server  # validate channel
+            if channel not in subscriber_list:
+                await self.bot.say("Channel was never subscribed.")
+                return
+            channel_settings = subscriber_list[channel][0]
+            channel_settings["purge"] = not channel_settings["purge"]
+            with open('config.json', 'w') as outfile:
+                json.dump(self.config_data,
+                          outfile,
+                          indent=4)
+            if channel_settings["purge"]:
+                await self.bot.say("Purge mode on. Bot will now purge messages upon"
+                                   " live updates. Please make sure your bot has "
+                                   "the right permissions to remove messages.")
+            else:
+                await self.bot.say("Purge mode off.")
+        except Exception as e:
+            await self.bot.say("Failed to set purge mode. Please make sure this"
+                               " channel is within a valid server.")
 
     async def add_currency(self, ctx, currency):
         """
