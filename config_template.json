@@ -1,12 +1,9 @@
 {
     "token": "Enter your Discord token here",
     "load_acronyms": true,
-    "live_channel": "Enter the channel ID to post live updates to",
-    "live_update_interval": "180",
-    "live_check_currency": [
-        "bitcoin",
-        "ethereum",
-        "bitcoin-cash",
-        "litecoin"
+    "subscriber_list": [
+        {
+            
+        }
     ]
 }
