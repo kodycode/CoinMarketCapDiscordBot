@@ -2,8 +2,10 @@ from bot_logger import logger
 from cogs.modules.coin_market import CoinMarket, CoinMarketException, CurrencyException, FiatException, MarketStatsException
 from discord.ext import commands
 import asyncio
+import datetime
 import discord
 import json
+import re
 
 
 class CoinMarketCommand:
@@ -47,17 +49,6 @@ class CoinMarketCommand:
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
         await self.cmd_function.display_stats(fiat)
-
-    @commands.command(name='live')
-    async def live(self, fiat='USD'):
-        """
-        Displays live updates of coin stats in n-second intervals.
-        An example for this command would be:
-        "$live"
-
-        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
-        """
-        await self.cmd_function.display_live_data(fiat)
 
     @commands.command(name='sub', pass_context=True)
     async def subscribe(self, ctx, fiat='USD'):
@@ -103,6 +94,15 @@ class CoinMarketCommand:
         @param ctx - context of the command sent
         """
         await self.cmd_function.remove_currency(ctx, currency)
+
+    @commands.command(name='purge', pass_context=True)
+    async def purge(self, ctx):
+        """
+        Enables the bot to purge messages from the channel
+        An example for this command would be:
+        "$purge"
+        """
+        await self.cmd_function.toggle_purge(ctx)
 
     @commands.command(name='profit')
     async def profit(self, currency: str, currency_amt: float, cost: float, fiat='USD'):
@@ -175,28 +175,87 @@ class CoinMarketFunctionality:
         with open('config.json') as config:
             self.config_data = json.load(config)
         self.bot = bot
+        self.market_list = None
         self.coin_market = CoinMarket()
         self.live_on = False
-        self.crypto_acronyms = None
+        asyncio.async(self._continuous_updates())
+
+    def _update_market(self):
+        """
+        Loads all the cryptocurrencies that exist in the market
+
+        @return - list of crypto-currencies
+        """
+        try:
+            data = self.coin_market.fetch_currency_data(load_all=True)
+            self.market_list = data
+            print("Updated market list.")
+        except CurrencyException as e:
+            print("An error has occured. See error.log.")
+            logger.error("Exception: {}".format(str(e)))
+
+    @asyncio.coroutine
+    def _update_data(self):
+        self._update_market()
         if self.config_data['load_acronyms']:
             print("Loading cryptocurrency acronyms..")
             self.acronym_list = self._load_acronyms()
+        yield from self._display_live_data()
+
+    @asyncio.coroutine
+    def _continuous_updates(self):
+        try:
+            yield from self._update_data()
+            while True:
+                time = datetime.datetime.now()
+                if time.minute % 5 == 0:
+                    yield from self._update_data()
+                yield from asyncio.sleep(60)
+        except Exception as e:
+            print("An error has occured. See error.log.")
+            logger.error("Exception: {}".format(str(e)))
 
     def _load_acronyms(self):
         """
         Loads all acronyms of existing crypto-coins out there
 
-        @return - list of acronyms
+        @return - list of crypto-acronyms
         """
         try:
-            acronym_list, duplicate_count = self.coin_market.load_all_acronyms()
-            print("Acronyms have successfully loaded.")
-            logger.info("Acronyms have successfully loaded.")
-            return acronym_list
-        except CoinMarketException as e:
+            if self.market_list is None:
+                raise Exception("Market list was not loaded.")
+            acronym_list = {}
+            duplicate_count = 0
+            for currency in self.market_list:
+                if currency['symbol'] in acronym_list:
+                    duplicate_count += 1
+                    logger.warning("Found duplicate acronym. Creating seperate "
+                                   "separate definition...")
+                    if currency['symbol'] not in acronym_list[currency['symbol']]:
+                        acronym_list[currency['symbol'] + str(1)] = acronym_list[currency['symbol']]
+                        acronym_list[currency['symbol']] = ("Duplicate acronyms "
+                                                            "found. Possible "
+                                                            "searches are:\n"
+                                                            "{}1 ({})\n".format(currency['symbol'],
+                                                                                acronym_list[currency['symbol']]))
+                    dupe_acronym = re.search('\\d+', acronym_list[currency['symbol']])
+                    dupe_num = str(int(dupe_acronym.group(len(dupe_acronym.group()) - 1)) + 1)
+                    dupe_key = currency['symbol'] + dupe_num
+                    acronym_list[dupe_key] = currency['id']
+                    acronym_list[currency['symbol']] = (acronym_list[currency['symbol']]
+                                                        + "{} ({})".format(dupe_key,
+                                                                           currency['id']))
+                    dupe_msg = "Created duplicate acronym: {} ({})".format(dupe_key,
+                                                                           currency['id'])
+                    logger.info(dupe_msg)
+                else:
+                    acronym_list[currency['symbol']] = currency['id']
+                print("Acronyms have successfully loaded.")
+                logger.info("Acronyms have successfully loaded.")
+                return acronym_list
+        except Exception as e:
             print("Failed to load cryptocurrency acronyms. See error.log.")
-            logger.error("CoinMarketException: {}".format(str(e)))
-            return None
+            logger.error("Exception: {}".format(str(e)))
 
     async def display_search(self, currency, fiat):
         """
@@ -399,37 +458,29 @@ class CoinMarketFunctionality:
             print("An error has occured. See error.log.")
             logger.error("Exception: {}".format(str(e)))
 
-    async def display_live_data(self, fiat):
+    async def _display_live_data(self):
         """
         Obtains and displays live updates of coin stats in n-second intervals.
-        An example for this command would be:
-        "$live"
-
-        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
         try:
             subscriber_list = self.config_data["subscriber_list"][0]
-            timer = self.config_data['live_update_interval']
-            if not self.live_on:
-                self.live_on = True
-                while True:
-                    data = await self.coin_market.get_multiple_currency(self.acronym_list,
-                                                                        currency_list,
-                                                                        fiat)
-                    for channel in subscriber_list:
+            for channel in subscriber_list:
+                channel_settings = subscriber_list[channel][0]
+                if channel_settings["currencies"]:
+                    if channel_settings["purge"] is True:
                         try:
                             await self.bot.purge_from(self.bot.get_channel(channel),
-                                                      limit=1)
+                                                      limit=10)
                         except:
                             pass
-                        em = discord.Embed(title="Live Currency Update",
-                                           description=data,
-                                           colour=0xFFD700)
-                        await self.bot.send_message(self.bot.get_channel(channel),
-                                                    embed=em)
-                    await asyncio.sleep(float(timer))
-            else:
-                await self.bot.say("Live updates are already on.")
+                    data = await self.coin_market.get_multiple_currency(self.acronym_list,
+                                                                        channel_settings["currencies"],
+                                                                        channel_settings["fiat"])
+                    em = discord.Embed(title="Live Currency Update",
+                                       description=data,
+                                       colour=0xFFD700)
+                    await self.bot.send_message(self.bot.get_channel(channel),
+                                                embed=em)
         except CurrencyException as e:
             logger.error("CurrencyException: {}".format(str(e)))
             self.live_on = False
@@ -495,6 +546,25 @@ class CoinMarketFunctionality:
         except Exception as e:
             print("An error has occured. See error.log.")
             logger.error("Exception: {}".format(str(e)))
+
+    async def toggle_purge(self, ctx):
+        """
+        Turns purge mode on/off for the channel
+        """
+        channel = ctx.message.channel.id
+        subscriber_list = self.config_data["subscriber_list"][0]
+        channel_settings = subscriber_list[channel][0]
+        channel_settings["purge"] = not channel_settings["purge"]
+        with open('config.json', 'w') as outfile:
+            json.dump(self.config_data,
+                      outfile,
+                      indent=4)
+        if channel_settings["purge"]:
+            await self.bot.say("Purge mode on. Bot will now purge messages upon"
+                               " live updates. Please make sure your bot has "
+                               "the right permissions to remove messages.")
+        else:
+            await self.bot.say("Purge mode off.")
 
     async def add_currency(self, ctx, currency):
         """

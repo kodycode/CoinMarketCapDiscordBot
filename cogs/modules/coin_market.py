@@ -1,6 +1,4 @@
-from bot_logger import logger
 from coinmarketcap import Market
-import re
 
 fiat_currencies = {
     'AUD': '$', 'BRL': 'R$', 'CAD': '$', 'CHF': 'Fr.',
@@ -79,44 +77,6 @@ class CoinMarket:
                                                 float(price))
         return formatted_fiat
 
-    def load_all_acronyms(self):
-        """
-        Loads all available acronyms for cryptocurrencies
-
-        @return - all cryptocurrency acronyms
-        """
-        try:
-            acronym_list = {}
-            duplicate_count = 0
-            data = self.fetch_currency_data(load_all=True)
-            for currency in data:
-                if currency['symbol'] in acronym_list:
-                    duplicate_count += 1
-                    logger.warning("Found duplicate acronym. Creating seperate "
-                                   "separate definition...")
-                    if currency['symbol'] not in acronym_list[currency['symbol']]:
-                        acronym_list[currency['symbol'] + str(1)] = acronym_list[currency['symbol']]
-                        acronym_list[currency['symbol']] = ("Duplicate acronyms "
-                                                            "found. Possible "
-                                                            "searches are:\n"
-                                                            "{}1 ({})\n".format(currency['symbol'],
-                                                                                acronym_list[currency['symbol']]))
-                    dupe_acronym = re.search('\\d+', acronym_list[currency['symbol']])
-                    dupe_num = str(int(dupe_acronym.group(len(dupe_acronym.group()) - 1)) + 1)
-                    dupe_key = currency['symbol'] + dupe_num
-                    acronym_list[dupe_key] = currency['id']
-                    acronym_list[currency['symbol']] = (acronym_list[currency['symbol']]
-                                                        + "{} ({})".format(dupe_key,
-                                                                           currency['id']))
-                    dupe_msg = "Created duplicate acronym: {} ({})".format(dupe_key,
-                                                                           currency['id'])
-                    logger.info(dupe_msg)
-                else:
-                    acronym_list[currency['symbol']] = currency['id']
-            return acronym_list, duplicate_count
-        except Exception as e:
-            raise CoinMarketException("Failed to load all acronyms: {}".format(e))
-
     def fetch_currency_data(self, currency="", fiat="", load_all=False):
         """
         Fetches the currency data based on the desired currency
@@ -130,9 +90,9 @@ class CoinMarket:
         """
         try:
             if load_all:
-                return self.market.ticker(currency, start=0, limit=0)
+                return self.market.ticker(start=0, limit=0)
             return self.market.ticker(currency, convert=fiat)
-        except Exception:
+        except Exception as e:
             raise CurrencyException("Failed to find currency: `{}`. Check "
                                     "if this currency is valid and also check "
                                     "for spelling errors.".format(currency))
