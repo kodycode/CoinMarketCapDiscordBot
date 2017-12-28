@@ -356,7 +356,7 @@ class CoinMarketFunctionality:
                     try:
                         await self.bot.send_message(self.bot.get_channel(channel),
                                                     embed=em)
-                    except Exception:
+                    except Exception as e:
                         remove_channels.append(channel)
                         logger.error("Something went wrong with this channel. "
                                      "This channel will now be removed.")
@@ -522,6 +522,13 @@ class CoinMarketFunctionality:
             ucase_fiat = self.coin_market.fiat_check(fiat)
             channel = str(ctx.message.channel.id)
             subscriber_list = self.config_data["subscriber_list"][0]
+            try:
+                self.bot.get_channel(channel).server  # validate channel
+            except:
+                await self.bot.say("Failed to add channel as a subscriber. "
+                                   " Please make sure this channel is within a "
+                                   "valid server.")
+                return
             if channel not in subscriber_list:
                 subscriber_list[channel] = [{}]
                 channel_settings = subscriber_list[channel][0]
@@ -602,7 +609,7 @@ class CoinMarketFunctionality:
                     await self.bot.say(currency)
                     return
             if currency not in self.market_list:
-                raise CurrencyException("Currency is invalid: {}".format(currency))
+                raise CurrencyException("Currency is invalid: ``{}``".format(currency))
             channel = ctx.message.channel.id
             subscriber_list = self.config_data["subscriber_list"][0]
             if channel in subscriber_list:
