@@ -8,7 +8,7 @@ import json
 import re
 
 
-class CoinMarketCommand:
+class CoinMarketCommands:
     """
     Handles all CMC related commands
     """
@@ -49,60 +49,6 @@ class CoinMarketCommand:
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
         await self.cmd_function.display_stats(fiat)
-
-    @commands.command(name='sub', pass_context=True)
-    async def subscribe(self, ctx, fiat='USD'):
-        """
-        Subscribes the channel to live updates.
-        An example for this command would be:
-        "$sub"
-
-        @param ctx - context of the command sent
-        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
-        """
-        await self.cmd_function.add_subscriber(ctx, fiat)
-
-    @commands.command(name='unsub', pass_context=True)
-    async def unsubscribe(self, ctx):
-        """
-        Unsubscribes the channel from live updates.
-        An example for this command would be:
-        "$sub"
-
-        @param ctx - context of the command sent
-        """
-        await self.cmd_function.remove_subscriber(ctx)
-
-    @commands.command(name='addc', pass_context=True)
-    async def addc(self, ctx, currency: str):
-        """
-        Adds a cryptocurrency to display in live updates
-        An example for this command would be:
-        "$addc bitcoin"
-
-        @param ctx - context of the command sent
-        """
-        await self.cmd_function.add_currency(ctx, currency)
-
-    @commands.command(name='remc', pass_context=True)
-    async def remc(self, ctx, currency: str):
-        """
-        Removes a cryptocurrency from being displayed in live updates
-        An example for this command would be:
-        "$remc bitcoin"
-
-        @param ctx - context of the command sent
-        """
-        await self.cmd_function.remove_currency(ctx, currency)
-
-    @commands.command(name='purge', pass_context=True)
-    async def purge(self, ctx):
-        """
-        Enables the bot to purge messages from the channel
-        An example for this command would be:
-        "$purge"
-        """
-        await self.cmd_function.toggle_purge(ctx)
 
     @commands.command(name='profit')
     async def profit(self, currency: str, currency_amt: float, cost: float, fiat='USD'):
@@ -166,6 +112,60 @@ class CoinMarketCommand:
                                                        price,
                                                        fiat)
 
+    @commands.command(name='sub', pass_context=True)
+    async def subscribe(self, ctx, fiat='USD'):
+        """
+        Subscribes the channel to live updates.
+        An example for this command would be:
+        "$sub"
+
+        @param ctx - context of the command sent
+        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
+        """
+        await self.cmd_function.add_subscriber(ctx, fiat)
+
+    @commands.command(name='unsub', pass_context=True)
+    async def unsubscribe(self, ctx):
+        """
+        Unsubscribes the channel from live updates.
+        An example for this command would be:
+        "$sub"
+
+        @param ctx - context of the command sent
+        """
+        await self.cmd_function.remove_subscriber(ctx)
+
+    @commands.command(name='addc', pass_context=True)
+    async def addc(self, ctx, currency: str):
+        """
+        Adds a cryptocurrency to display in live updates
+        An example for this command would be:
+        "$addc bitcoin"
+
+        @param ctx - context of the command sent
+        """
+        await self.cmd_function.add_currency(ctx, currency)
+
+    @commands.command(name='remc', pass_context=True)
+    async def remc(self, ctx, currency: str):
+        """
+        Removes a cryptocurrency from being displayed in live updates
+        An example for this command would be:
+        "$remc bitcoin"
+
+        @param ctx - context of the command sent
+        """
+        await self.cmd_function.remove_currency(ctx, currency)
+
+    @commands.command(name='purge', pass_context=True)
+    async def purge(self, ctx):
+        """
+        Enables the bot to purge messages from the channel
+        An example for this command would be:
+        "$purge"
+        """
+        await self.cmd_function.toggle_purge(ctx)
+
 
 class CoinMarketFunctionality:
     """
@@ -180,6 +180,22 @@ class CoinMarketFunctionality:
         self.live_on = False
         asyncio.async(self._continuous_updates())
 
+    @asyncio.coroutine
+    def _update_data(self):
+        self._update_market()
+        if self.config_data['load_acronyms']:
+            self.acronym_list = self._load_acronyms()
+        yield from self._display_live_data()
+
+    @asyncio.coroutine
+    def _continuous_updates(self):
+        yield from self._update_data()
+        while True:
+            time = datetime.datetime.now()
+            if time.minute % 5 == 0:
+                yield from self._update_data()
+        yield from asyncio.sleep(60)
+
     def _update_market(self):
         """
         Loads all the cryptocurrencies that exist in the market
@@ -189,29 +205,7 @@ class CoinMarketFunctionality:
         try:
             data = self.coin_market.fetch_currency_data(load_all=True)
             self.market_list = data
-            print("Updated market list.")
         except CurrencyException as e:
-            print("An error has occured. See error.log.")
-            logger.error("Exception: {}".format(str(e)))
-
-    @asyncio.coroutine
-    def _update_data(self):
-        self._update_market()
-        if self.config_data['load_acronyms']:
-            print("Loading cryptocurrency acronyms..")
-            self.acronym_list = self._load_acronyms()
-        yield from self._display_live_data()
-
-    @asyncio.coroutine
-    def _continuous_updates(self):
-        try:
-            yield from self._update_data()
-            while True:
-                time = datetime.datetime.now()
-                if time.minute % 5 == 0:
-                    yield from self._update_data()
-                yield from asyncio.sleep(60)
-        except Exception as e:
             print("An error has occured. See error.log.")
             logger.error("Exception: {}".format(str(e)))
 
@@ -245,13 +239,8 @@ class CoinMarketFunctionality:
                     acronym_list[currency['symbol']] = (acronym_list[currency['symbol']]
                                                         + "{} ({})".format(dupe_key,
                                                                            currency['id']))
-                    dupe_msg = "Created duplicate acronym: {} ({})".format(dupe_key,
-                                                                           currency['id'])
-                    logger.info(dupe_msg)
                 else:
                     acronym_list[currency['symbol']] = currency['id']
-                print("Acronyms have successfully loaded.")
-                logger.info("Acronyms have successfully loaded.")
                 return acronym_list
         except Exception as e:
             print("Failed to load cryptocurrency acronyms. See error.log.")
@@ -304,6 +293,70 @@ class CoinMarketFunctionality:
         except Exception as e:
             print("An error has occured. See error.log.")
             logger.error("Exception: {}".format(str(e)))
+
+    async def display_stats(self, fiat):
+        """
+        Obtains the market stats to display
+
+        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
+        """
+        try:
+            data = await self.coin_market.get_stats(fiat)
+            em = discord.Embed(title="Market Stats",
+                               description=data,
+                               colour=0x008000)
+            await self.bot.say(embed=em)
+        except MarketStatsException as e:
+            logger.error("MarketStatsException: {}".format(str(e)))
+            await self.bot.say(e)
+        except FiatException as e:
+            logger.error("FiatException: {}".format(str(e)))
+            await self.bot.say(e)
+        except CoinMarketException as e:
+            print("An error has occured. See error.log.")
+            logger.error("CoinMarketException: {}".format(str(e)))
+        except Exception as e:
+            print("An error has occured. See error.log.")
+            logger.error("Exception: {}".format(str(e)))
+
+    async def _display_live_data(self):
+        """
+        Obtains and displays live updates of coin stats in n-second intervals.
+        """
+        try:
+            subscriber_list = self.config_data["subscriber_list"][0]
+            for channel in subscriber_list:
+                channel_settings = subscriber_list[channel][0]
+                if channel_settings["currencies"]:
+                    if channel_settings["purge"] is True:
+                        try:
+                            await self.bot.purge_from(self.bot.get_channel(channel),
+                                                      limit=10)
+                        except:
+                            pass
+                    data = await self.coin_market.get_multiple_currency(self.acronym_list,
+                                                                        channel_settings["currencies"],
+                                                                        channel_settings["fiat"])
+                    em = discord.Embed(title="Live Currency Update",
+                                       description=data,
+                                       colour=0xFFD700)
+                    await self.bot.send_message(self.bot.get_channel(channel),
+                                                embed=em)
+        except CurrencyException as e:
+            logger.error("CurrencyException: {}".format(str(e)))
+            self.live_on = False
+            await self.bot.say(e)
+        except FiatException as e:
+            logger.error("FiatException: {}".format(str(e)))
+            self.live_on = False
+            await self.bot.say(e)
+        except CoinMarketException as e:
+            print("An error has occured. See error.log.")
+            logger.error("CoinMarketException: {}".format(str(e)))
+        except Exception as e:
+            if not str(e).decode('utf-8').isspace():
+                print("An error has occured. See error.log.")
+                logger.error("Exception: {}".format(str(e)))
 
     async def calculate_coin_to_fiat(self, currency, currency_amt, fiat):
         """
@@ -432,70 +485,6 @@ class CoinMarketFunctionality:
             await self.bot.say("Command failed. Make sure the arguments are valid.")
             print("An error has occured. See error.log.")
             logger.error("Exception: {}".format(str(e)))
-
-    async def display_stats(self, fiat):
-        """
-        Obtains the market stats to display
-
-        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
-        """
-        try:
-            data = await self.coin_market.get_stats(fiat)
-            em = discord.Embed(title="Market Stats",
-                               description=data,
-                               colour=0x008000)
-            await self.bot.say(embed=em)
-        except MarketStatsException as e:
-            logger.error("MarketStatsException: {}".format(str(e)))
-            await self.bot.say(e)
-        except FiatException as e:
-            logger.error("FiatException: {}".format(str(e)))
-            await self.bot.say(e)
-        except CoinMarketException as e:
-            print("An error has occured. See error.log.")
-            logger.error("CoinMarketException: {}".format(str(e)))
-        except Exception as e:
-            print("An error has occured. See error.log.")
-            logger.error("Exception: {}".format(str(e)))
-
-    async def _display_live_data(self):
-        """
-        Obtains and displays live updates of coin stats in n-second intervals.
-        """
-        try:
-            subscriber_list = self.config_data["subscriber_list"][0]
-            for channel in subscriber_list:
-                channel_settings = subscriber_list[channel][0]
-                if channel_settings["currencies"]:
-                    if channel_settings["purge"] is True:
-                        try:
-                            await self.bot.purge_from(self.bot.get_channel(channel),
-                                                      limit=10)
-                        except:
-                            pass
-                    data = await self.coin_market.get_multiple_currency(self.acronym_list,
-                                                                        channel_settings["currencies"],
-                                                                        channel_settings["fiat"])
-                    em = discord.Embed(title="Live Currency Update",
-                                       description=data,
-                                       colour=0xFFD700)
-                    await self.bot.send_message(self.bot.get_channel(channel),
-                                                embed=em)
-        except CurrencyException as e:
-            logger.error("CurrencyException: {}".format(str(e)))
-            self.live_on = False
-            await self.bot.say(e)
-        except FiatException as e:
-            logger.error("FiatException: {}".format(str(e)))
-            self.live_on = False
-            await self.bot.say(e)
-        except CoinMarketException as e:
-            print("An error has occured. See error.log.")
-            logger.error("CoinMarketException: {}".format(str(e)))
-        except Exception as e:
-            if not str(e).decode('utf-8').isspace():
-                print("An error has occured. See error.log.")
-                logger.error("Exception: {}".format(str(e)))
 
     async def add_subscriber(self, ctx, fiat):
         """
@@ -643,4 +632,4 @@ class CoinMarketFunctionality:
 
 
 def setup(bot):
-    bot.add_cog(CoinMarketCommand(bot))
+    bot.add_cog(CoinMarketCommands(bot))
