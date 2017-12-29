@@ -1,5 +1,6 @@
 [![Discord Bots](https://discordbots.org/api/widget/lib/353373501274456065.svg?noavatar=true)](https://discordbots.org/bot/353373501274456065)
 [![Discord Bots](https://discordbots.org/api/widget/status/353373501274456065.svg?noavatar=true)](https://discordbots.org/bot/353373501274456065)
+[![Discord Bots](https://discordbots.org/api/widget/servers/353373501274456065.svg?noavatar=true)](https://discordbots.org/bot/353373501274456065)
 [![Discord Bots](https://discordbots.org/api/widget/upvotes/353373501274456065.svg?noavatar=true)](https://discordbots.org/bot/353373501274456065)
 # CoinMarketDiscordBot
 A Discord bot that reports data from https://coinmarketcap.com/
