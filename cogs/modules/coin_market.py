@@ -1,4 +1,5 @@
 from coinmarketcap import Market
+from currency_converter import CurrencyConverter
 
 fiat_currencies = {
     'AUD': '$', 'BRL': 'R$', 'CAD': '$', 'CHF': 'Fr.',
@@ -68,7 +69,10 @@ class CoinMarket:
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         @return - formatted price under fiat
         """
+        c = CurrencyConverter()
         ucase_fiat = fiat.upper()
+        if fiat is not "USD":
+            price = float(c.convert(float(price), "USD", fiat))
         if ucase_fiat in fiat_suffix:
             formatted_fiat = "{:,.2f} {}".format(float(price),
                                                  fiat_currencies[ucase_fiat])
@@ -107,6 +111,7 @@ class CoinMarket:
         @return - formatted currency data
         """
         try:
+            price = CurrencyConverter()
             isPositivePercent = True
             formatted_data = ''
             hour_trend = ''
@@ -120,19 +125,28 @@ class CoinMarket:
                                                                  data['name'],
                                                                  data['symbol'],
                                                                  hour_trend)
+            if fiat is not "USD":
+                converted_price = float(price.convert(float(data['price_usd']),
+                                                      'USD',
+                                                      fiat))
+
             if fiat in fiat_suffix:
-                formatted_data += 'Price ({}): **{:,} {}**\n'.format(fiat,
-                                                                     float(data['price_{}'.format(fiat.lower())]),
-                                                                     fiat_currencies[fiat])
+                formatted_data += 'Price ({}): **{:,.2f} {}**\n'.format(fiat,
+                                                                        converted_price,
+                                                                        fiat_currencies[fiat])
             else:
-                formatted_data += 'Price ({}): **{}{:,}**\n'.format(fiat,
-                                                                    fiat_currencies[fiat],
-                                                                    float(data['price_{}'.format(fiat.lower())]))
+                formatted_data += 'Price ({}): **{}{:,.2f}**\n'.format(fiat,
+                                                                       fiat_currencies[fiat],
+                                                                       converted_price)
             formatted_data += 'Price (BTC): **{:,}**\n'.format(float(data['price_btc']))
             if (data['market_cap_usd'] is None):
-                formatted_data += 'Market Cap (USD): Unknown\n'
+                formatted_data += 'Market Cap ({}): Unknown\n'.format(fiat)
             else:
-                formatted_data += 'Market Cap (USD): **${:,}**\n'.format(float(data['market_cap_usd']))
+                converted_price = float(price.convert(float(data['market_cap_usd']),
+                                                      'USD',
+                                                      fiat))
+                formatted_data += 'Market Cap ({}): **${:,}**\n'.format(fiat,
+                                                                        converted_price)
             if (data['available_supply'] is None):
                 formatted_data += 'Available Supply: Unknown\n'
             else:
@@ -145,7 +159,7 @@ class CoinMarket:
         except Exception as e:
             raise CoinMarketException("Failed to format data: {}".format(e))
 
-    async def get_currency(self, acronym_list, currency, fiat):
+    def get_currency(self, acronym_list, currency, fiat):
         """
         Obtains the data of the specified currency and returns them.
 
@@ -174,7 +188,7 @@ class CoinMarket:
         except Exception as e:
             raise CoinMarketException(e)
 
-    async def get_current_currency(self, market_list, acronym_list, currency, fiat):
+    def get_current_currency(self, market_list, acronym_list, currency, fiat):
         """
         Obtains the data of the specified currency and returns them using
         the current updated market list
@@ -200,7 +214,7 @@ class CoinMarket:
         except Exception as e:
             raise CoinMarketException(e)
 
-    def _fetch_coinmarket_stats(self, fiat):
+    def fetch_coinmarket_stats(self, fiat=''):
         """
         Fetches the coinmarket stats
 
@@ -221,18 +235,21 @@ class CoinMarket:
         @return - formatted stats
         """
         try:
+            c = CurrencyConverter()
             formatted_stats = ''
             if (stats['total_market_cap_usd'] is None):
                 formatted_stats += "Total Market Cap (USD): Unknown"
             else:
+                if fiat is not "USD":
+                    converted_price = c.convert(float(stats['total_market_cap_usd']), 'USD', fiat)
                 if fiat in fiat_suffix:
                     formatted_stats += "Total Market Cap ({}): **{:,} {}**\n".format(fiat,
-                                                                                     float(stats['total_market_cap_{}'.format(fiat.lower())]),
+                                                                                     converted_price,
                                                                                      fiat_currencies[fiat])
                 else:
                     formatted_stats += "Total Market Cap ({}): **{}{:,}**\n".format(fiat,
                                                                                     fiat_currencies[fiat],
-                                                                                    float(stats['total_market_cap_{}'.format(fiat.lower())]))
+                                                                                    converted_price)
             formatted_stats += "Bitcoin Percentage of Market: **{:,}%**\n".format(stats['bitcoin_percentage_of_market_cap'])
             formatted_stats += "Active Markets: **{:,}**\n".format(stats['active_markets'])
             formatted_stats += "Active Currencies: **{:,}**\n".format(stats['active_currencies'])
@@ -242,7 +259,7 @@ class CoinMarket:
         except Exception as e:
             raise CoinMarketException("Failed to format data: `{}`".format(e))
 
-    async def get_stats(self, fiat):
+    def get_stats(self, fiat):
         """
         Returns the market stats
 
@@ -251,7 +268,7 @@ class CoinMarket:
         """
         try:
             fiat = self.fiat_check(fiat)
-            stats = self._fetch_coinmarket_stats(fiat)
+            stats = self.fetch_coinmarket_stats(fiat)
             formatted_stats = self._format_coinmarket_stats(stats, fiat)
             return formatted_stats
         except FiatException as e:
@@ -261,7 +278,25 @@ class CoinMarket:
         except Exception as e:
             raise CoinMarketException(e)
 
-    async def get_multiple_currency(self, acronym_list, currency_list, fiat):
+    def get_current_stats(self, market_stats, fiat):
+        """
+        Returns the market stats
+
+        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
+        @return - formatted market stats
+        """
+        try:
+            fiat = self.fiat_check(fiat)
+            formatted_stats = self._format_coinmarket_stats(market_stats, fiat)
+            return formatted_stats
+        except FiatException as e:
+            raise
+        except MarketStatsException as e:
+            raise
+        except Exception as e:
+            raise CoinMarketException(e)
+
+    def get_multiple_currency(self, acronym_list, currency_list, fiat):
         """
         Returns updated info of multiple coin stats
         @param acronym_list - list of cryptocurrency acronyms
@@ -292,7 +327,7 @@ class CoinMarket:
         except Exception as e:
             raise CoinMarketException(e)
 
-    async def get_current_multiple_currency(self, market_list, acronym_list, currency_list, fiat):
+    def get_current_multiple_currency(self, market_list, acronym_list, currency_list, fiat):
         """
         Returns updated info of multiple coin stats using the current
         updated market list

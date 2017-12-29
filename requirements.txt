@@ -1,2 +1,3 @@
 coinmarketcap==4.1.1
 discord.py==0.16.12
+currencyconverter==0.13.2

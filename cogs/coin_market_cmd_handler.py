@@ -184,6 +184,7 @@ class CoinMarketFunctionality:
             self.config_data = json.load(config)
         self.bot = bot
         self.market_list = None
+        self.market_stats = None
         self.coin_market = CoinMarket()
         self.live_on = False
         asyncio.async(self._continuous_updates())
@@ -211,9 +212,10 @@ class CoinMarketFunctionality:
         @return - list of crypto-currencies
         """
         try:
-            data = self.coin_market.fetch_currency_data(load_all=True)
+            self.market_stats = self.coin_market.fetch_coinmarket_stats()
+            currency_data = self.coin_market.fetch_currency_data(load_all=True)
             market_dict = {}
-            for currency in data:
+            for currency in currency_data:
                 market_dict[currency['id']] = currency
             self.market_list = market_dict
         except CurrencyException as e:
@@ -268,18 +270,18 @@ class CoinMarketFunctionality:
                     await self.bot.say("Don't include spaces in multi-coin search.")
                     return
                 currency_list = currency.split(',')
-                data = await self.coin_market.get_current_multiple_currency(self.market_list,
-                                                                            self.acronym_list,
-                                                                            currency_list,
-                                                                            fiat)
+                data = self.coin_market.get_current_multiple_currency(self.market_list,
+                                                                      self.acronym_list,
+                                                                      currency_list,
+                                                                      fiat.upper())
                 em = discord.Embed(title="Search results",
                                    description=data,
                                    colour=0xFFD700)
             else:
-                data, isPositivePercent = await self.coin_market.get_current_currency(self.market_list,
-                                                                                      self.acronym_list,
-                                                                                      currency,
-                                                                                      fiat)
+                data, isPositivePercent = self.coin_market.get_current_currency(self.market_list,
+                                                                                self.acronym_list,
+                                                                                currency,
+                                                                                fiat.upper())
                 if isPositivePercent:
                     em = discord.Embed(title="Search results",
                                        description=data,
@@ -312,7 +314,7 @@ class CoinMarketFunctionality:
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
         try:
-            data = await self.coin_market.get_stats(fiat)
+            data = self.coin_market.get_current_stats(self.market_stats, fiat)
             em = discord.Embed(title="Market Stats",
                                description=data,
                                colour=0x008000)
@@ -346,10 +348,10 @@ class CoinMarketFunctionality:
                                                       limit=10)
                         except:
                             pass
-                    data = await self.coin_market.get_current_multiple_currency(self.market_list,
-                                                                                self.acronym_list,
-                                                                                channel_settings["currencies"],
-                                                                                channel_settings["fiat"])
+                    data = self.coin_market.get_current_multiple_currency(self.market_list,
+                                                                          self.acronym_list,
+                                                                          channel_settings["currencies"],
+                                                                          channel_settings["fiat"])
                     em = discord.Embed(title="Live Currency Update",
                                        description=data,
                                        colour=0xFFD700)
@@ -392,20 +394,20 @@ class CoinMarketFunctionality:
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
         try:
-            # ucase_fiat = self.coin_market.fiat_check(fiat)
+            ucase_fiat = self.coin_market.fiat_check(fiat)
             if currency.upper() in self.acronym_list:
                 currency = self.acronym_list[currency.upper()]
             data = self.market_list[currency]
-            current_cost = float(data['price_{}'.format(fiat.lower())])
+            current_cost = float(data['price_usd'])
             fiat_cost = self.coin_market.format_price(currency_amt*current_cost,
-                                                      fiat)
+                                                      ucase_fiat)
             currency = currency.title()
             result = "**{} {}** is worth **{}**".format(currency_amt,
                                                         data['symbol'],
                                                         str(fiat_cost))
             em = discord.Embed(title="{}({}) to {}".format(currency,
                                                            data['symbol'],
-                                                           fiat.upper()),
+                                                           ucase_fiat),
                                description=result,
                                colour=0xFFD700)
             await self.bot.say(embed=em)
@@ -431,19 +433,19 @@ class CoinMarketFunctionality:
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
         try:
-            # ucase_fiat = self.coin_market.fiat_check(fiat)
+            ucase_fiat = self.coin_market.fiat_check(fiat)
             if currency.upper() in self.acronym_list:
                 currency = self.acronym_list[currency.upper()]
             data = self.market_list[currency]
-            current_cost = float(data['price_{}'.format(fiat.lower())])
+            current_cost = float(data['price_usd'])
             amt_of_coins = "{:.8f}".format(price/current_cost)
             amt_of_coins = amt_of_coins.rstrip('0')
-            price = self.coin_market.format_price(price, fiat)
+            price = self.coin_market.format_price(price, ucase_fiat)
             currency = currency.title()
             result = "**{}** is worth **{} {}**".format(price,
                                                         amt_of_coins,
                                                         currency)
-            em = discord.Embed(title="{} to {}({})".format(fiat.upper(),
+            em = discord.Embed(title="{} to {}({})".format(ucase_fiat,
                                                            currency,
                                                            data['symbol']),
                                description=result,
@@ -472,20 +474,20 @@ class CoinMarketFunctionality:
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
         try:
-            # ucase_fiat = self.coin_market.fiat_check(fiat)
+            ucase_fiat = self.coin_market.fiat_check(fiat)
             if currency.upper() in self.acronym_list:
                 currency = self.acronym_list[currency.upper()]
             data = self.market_list[currency]
-            current_cost = float(data['price_{}'.format(fiat.lower())])
+            current_cost = float(data['price_usd'])
             initial_investment = float(currency_amt)*float(cost)
             profit = float((float(currency_amt)*current_cost) - initial_investment)
             overall_investment = float(initial_investment + profit)
             currency = currency.title()
             formatted_initial_investment = self.coin_market.format_price(initial_investment,
-                                                                         fiat)
-            formatted_profit = self.coin_market.format_price(profit, fiat).replace('$-', '-$')
+                                                                         ucase_fiat)
+            formatted_profit = self.coin_market.format_price(profit, ucase_fiat)
             formatted_overall_investment = self.coin_market.format_price(overall_investment,
-                                                                         fiat)
+                                                                         ucase_fiat)
             msg = ("Initial Investment: **{}** (**{}** coin(s), costs **{}** each)\n"
                    "Profit: **{}**\n"
                    "Total investment worth: **{}**".format(formatted_initial_investment,
