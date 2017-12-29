@@ -2,12 +2,17 @@ from discord.ext import commands
 from bot_logger import logger
 import json
 import logging
+import requests
 
 bot = commands.Bot(command_prefix='$', description='Displays market data from https://coinmarketcap.com/')
 
 initial_extensions = [
     'cogs.coin_market_cmd_handler'
 ]
+
+DISCORD_BOT_URL = "https://discordbots.org/api/bots/353373501274456065/stats"
+with open('config.json') as config:
+    config_data = json.load(config)
 
 
 class CoinMarketBotException(Exception):
@@ -18,9 +23,15 @@ class CoinMarketBot:
     """Initiates the Bot"""
 
     def __init__(self):
-        with open('config.json') as config:
-            self.config_data = json.load(config)
-        bot.run(self.config_data["token"])
+        bot.run(config_data["token"])
+
+    @bot.event
+    async def on_server_join(server):
+        update_server_count(len(bot.servers))
+
+    @bot.event
+    async def on_server_remove(server):
+        update_server_count(len(bot.servers))
 
     @bot.event
     async def on_ready():
@@ -30,6 +41,7 @@ class CoinMarketBot:
                 bot.load_extension(extension)
                 print('CoinMarketDiscordBot is online.')
                 print('Bot is currently running on {} servers.'.format(len(bot.servers)))
+                update_server_count(len(bot.servers))
                 logger.info('Bot is online.')
             except Exception as e:
                 error_msg = 'Failed to load extension {}\n{}: {}'.format(extension, type(e).__name__, e)
@@ -62,6 +74,17 @@ async def send_cmd_help(ctx):
                                    "Command failed. Please make sure you're "
                                    "entering the correct arguments to the "
                                    "command:\n{}".format(page))
+
+
+def update_server_count(server_count):
+    try:
+        header = {'Authorization': '{}'.format(config_data["auth_token"])}
+        payload = {'server_count': server_count}
+        requests.post(DISCORD_BOT_URL,
+                      headers=header,
+                      data=payload)
+    except:
+        pass
 
 
 def main():
