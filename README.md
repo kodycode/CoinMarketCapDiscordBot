@@ -13,11 +13,10 @@ Click [here](https://discordapp.com/oauth2/authorize?&client_id=3533735012744560
 
 ```load_acronyms``` will load all the crypto acronyms so you can search for any cryptocurrency with just the acronym. For example, rather than searching with ```$s bitcoin```, you can just type ```$s btc```.
 
-This bot now also supports live status updates for cryptocurrencies with the `$live` command. If you want to use this command, you must install this bot on your own and fill in the `live_channel`, `live_update_interval`, and `live_check_currency` fields within the `config.json`. It'll read in the config.json file to determine what text channel it'll be posting in, what interval (or amount of seconds) until the next post, and what currencies it'll be posting about.
-
-***It's recommended that you make a separate channel specifically for this command for it will erase the messages within the channel with each iteration.***
-
 ## Commands:
+
+***As of 12/28/2017, the live command has been removed and in place exists a pub/sub system to simplify and expand the bot's utility. You do not need to host your own to bot to receive live updates anymore, you can sub to the bot's subscriber list to receive live updates (Please see the wiki page below for more details).***
+
 See wiki page [here](https://github.com/kodycode/CoinMarketDiscordBot/wiki/Command-Page) or type ```$help```.
 
 Stay tuned for more features.
