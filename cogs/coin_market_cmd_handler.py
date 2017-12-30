@@ -82,6 +82,22 @@ class CoinMarketCommands:
                                                  cost,
                                                  fiat)
 
+    @commands.command(name='cb')
+    async def cb(self, currency1: str, currency2: str, currency_amt: float):
+        """
+        Displays conversion from one cryptocurrency to another
+        An example for this command would be:
+        "$cc bitcoin litecoin 500"
+
+        @param currency1 - currency to convert from
+        @param currency2 - currency to convert to
+        @param currency_amt - amount of currency1 to convert
+                              to currency2
+        """
+        await self.cmd_function.calculate_coin_to_coin(currency1,
+                                                       currency2,
+                                                       currency_amt)
+
     @commands.command(name='cc')
     async def cc(self, currency: str, currency_amt: float, fiat='USD'):
         """
@@ -382,6 +398,44 @@ class CoinMarketFunctionality:
             print("An error has occured. See error.log.")
             logger.error("CoinMarketException: {}".format(str(e)))
         except Exception as e:
+            print("An error has occured. See error.log.")
+            logger.error("Exception: {}".format(str(e)))
+
+    async def calculate_coin_to_coin(self, currency1, currency2, currency_amt):
+        """
+        Calculates cryptocoin to another cryptocoin and displays it
+
+        @param currency1 - currency to convert from
+        @param currency2 - currency to convert to
+        @param currency_amt - amount of currency coins
+        """
+        try:
+            if currency1.upper() in self.acronym_list:
+                acronym1 = currency1.upper()
+                currency1 = self.acronym_list[currency1.upper()]
+            if currency2.upper() in self.acronym_list:
+                acronym2 = currency2.upper()
+                currency2 = self.acronym_list[currency2.upper()]
+            price_btc1 = float(self.market_list[currency1]['price_btc'])
+            price_btc2 = float(self.market_list[currency2]['price_btc'])
+            btc_amt = float("{:.8f}".format(currency_amt * price_btc1))
+            converted_amt = "{:.8f}".format(btc_amt/price_btc2).rstrip('0')
+            currency_amt = "{:.8f}".format(currency_amt).rstrip('0')
+            if currency_amt.endswith('.'):
+                currency_amt = currency_amt.replace('.', '')
+            result = "**{} {}** converts to **{} {}**".format(currency_amt,
+                                                              currency1.title(),
+                                                              converted_amt,
+                                                              currency2.title())
+            em = discord.Embed(title="{}({}) to {}({})".format(currency1.title(),
+                                                               acronym1,
+                                                               currency2.title(),
+                                                               acronym2),
+                               description=result,
+                               colour=0xFFD700)
+            await self.bot.say(embed=em)
+        except Exception as e:
+            await self.bot.say("Command failed. Make sure the arguments are valid.")
             print("An error has occured. See error.log.")
             logger.error("Exception: {}".format(str(e)))
 
