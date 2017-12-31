@@ -203,6 +203,43 @@ class SubscriberCommands:
         await self.cmd_function.toggle_purge(ctx)
 
 
+class NotificationCommands:
+    """
+    Handles commands for notifications of crypto prices
+    """
+    def __init__(self, cmd_function):
+        self.cmd_function = cmd_function
+
+    @commands.command(name='alert', pass_context=True)
+    async def alert(self, currency: str, condition: str, number: float):
+        """
+        Adds an alert to the channel when a price meets the condition specified
+        An example for this command would be:
+        "$alert bitcoin <= 15000"
+
+        @param currency - cryptocurrency to set an alert of
+        @param condition - condition to notify the channel
+        @param number - number for condition to compare
+        """
+        await self.cmd_function.add_alert(currency, condition, number)
+
+    @commands.command(name='cancel', pass_context=True)
+    async def cancel(self, alert_num: int):
+        """
+        Cancels an alert notification made for the channel
+
+        @param alert_num - number of the specific alert to remove
+        """
+        await self.cmd_function.remove_alert()
+
+    @commands.command(name='geta', pass_context=True)
+    async def geta(self):
+        """
+        Gets the list of alerts made for the channel
+        """
+        await self.cmd_function.get_alert_list()
+
+
 class CoinMarketFunctionality:
     """
     Handles CMC command functionality
