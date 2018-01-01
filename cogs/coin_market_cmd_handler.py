@@ -211,7 +211,7 @@ class NotificationCommands:
         self.cmd_function = cmd_function
 
     @commands.command(name='alert', pass_context=True)
-    async def alert(self, currency: str, condition: str, number: float):
+    async def alert(self, ctx, currency: str, operator: str, number: float, fiat='USD'):
         """
         Adds an alert to the channel when a price meets the condition specified
         An example for this command would be:
@@ -221,16 +221,16 @@ class NotificationCommands:
         @param condition - condition to notify the channel
         @param number - number for condition to compare
         """
-        await self.cmd_function.add_alert(currency, condition, number)
+        await self.cmd_function.add_alert(ctx, currency, operator, number, fiat)
 
     @commands.command(name='cancel', pass_context=True)
-    async def cancel(self, alert_num: int):
+    async def cancel(self, ctx, alert_num: int):
         """
         Cancels an alert notification made for the channel
 
         @param alert_num - number of the specific alert to remove
         """
-        await self.cmd_function.remove_alert()
+        await self.cmd_function.remove_alert(ctx)
 
     @commands.command(name='geta', pass_context=True)
     async def geta(self):
@@ -240,13 +240,15 @@ class NotificationCommands:
         await self.cmd_function.get_alert_list()
 
 
-class CoinMarketFunctionality:
+class CommandFunctionality:
     """
     Handles CMC command functionality
     """
     def __init__(self, bot):
         with open('config.json') as config:
             self.config_data = json.load(config)
+        with open('alerts.json') as alerts:
+            self.alert_data = json.load(alerts)
         self.bot = bot
         self.market_list = None
         self.market_stats = None
@@ -848,8 +850,62 @@ class CoinMarketFunctionality:
             print("An error has occured. See error.log.")
             logger.error("Exception: {}".format(str(e)))
 
+    async def add_alert(self, ctx, currency, operator, price, fiat):
+        """
+        Adds an alert to alerts.json
+
+        @param currency - cryptocurrency to set an alert of
+        @param operator - operator condition to notify the channel
+        @param price - price for condition to compare
+        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
+        """
+        # await bot.send_message(await bot.get_user_info("133108920511234048"), "")
+        try:
+            ucase_fiat = self.coin_market.fiat_check(fiat)
+            supported_operators = ["<", ">", "<=", ">="]
+            if currency.upper() in self.acronym_list:
+                currency = self.acronym_list[currency.upper()]
+                if "Duplicate" in currency:
+                    await self.bot.say(currency)
+                    return
+            if currency not in self.market_list:
+                raise CurrencyException("Currency is invalid: ``{}``".format(currency))
+            user_id = ctx.message.author.id
+            if user_id not in self.alert_data:
+                self.alert_data[user_id] = {}
+            len_alerts = len(self.alert_data[user_id]) + 1
+            alert_cap = int(self.config_data["alert_capacity"])
+            if len_alerts > alert_cap:
+                await self.bot.say("Unable to add alert, user alert capacity of"
+                                   " **{}** has been reached.".format(alert_cap))
+                return
+            alert_list = self.alert_data[user_id]
+            alert_list[len_alerts] = {}
+            channel_alert = alert_list[len_alerts]
+            channel_alert["currency"] = currency
+            if operator in supported_operators:
+                channel_alert["operation"] = operator
+            else:
+                await self.bot.say("Invalid operator: {}".format(operator))
+                return
+            channel_alert["price"] = "{:.6f}".format(price)
+            channel_alert["fiat"] = ucase_fiat
+            with open('alerts.json', 'w') as outfile:
+                json.dump(self.alert_data,
+                          outfile,
+                          indent=4)
+            await self.bot.say("Alert has been set.")
+        except FiatException as e:
+            logger.error("FiatException: {}".format(str(e)))
+            self.live_on = False
+            await self.bot.say(e)
+        except Exception as e:
+            print("An error has occured. See error.log.")
+            logger.error("Exception: {}".format(str(e)))
+
 
 def setup(bot):
-    cmd_function = CoinMarketFunctionality(bot)
+    cmd_function = CommandFunctionality(bot)
     bot.add_cog(CoinMarketCommands(cmd_function))
     bot.add_cog(SubscriberCommands(cmd_function))
+    bot.add_cog(NotificationCommands(cmd_function))
