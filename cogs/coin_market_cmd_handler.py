@@ -179,6 +179,7 @@ class SubscriberCommands:
         "$addc bitcoin"
 
         @param ctx - context of the command sent
+        @param currency - the cryptocurrency to add
         """
         await self.cmd_function.add_currency(ctx, currency)
 
@@ -190,6 +191,7 @@ class SubscriberCommands:
         "$remc bitcoin"
 
         @param ctx - context of the command sent
+        @param currency - the cryptocurrency to add
         """
         await self.cmd_function.remove_currency(ctx, currency)
 
@@ -199,6 +201,8 @@ class SubscriberCommands:
         Enables the bot to purge messages from the channel
         An example for this command would be:
         "$purge"
+
+        @param ctx - context of the command sent
         """
         await self.cmd_function.toggle_purge(ctx)
 
@@ -211,7 +215,7 @@ class NotificationCommands:
         self.cmd_function = cmd_function
 
     @commands.command(name='alert', pass_context=True)
-    async def alert(self, ctx, currency: str, operator: str, number: float, fiat='USD'):
+    async def alert(self, ctx, currency: str, operator: str, price: float, fiat='USD'):
         """
         Adds an alert to the channel when a price meets the condition specified
         An example for this command would be:
@@ -219,25 +223,29 @@ class NotificationCommands:
 
         @param currency - cryptocurrency to set an alert of
         @param condition - condition to notify the channel
-        @param number - number for condition to compare
+        @param price - price for condition to compare
+        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
-        await self.cmd_function.add_alert(ctx, currency, operator, number, fiat)
+        await self.cmd_function.add_alert(ctx, currency, operator, price, fiat)
 
     @commands.command(name='cancel', pass_context=True)
-    async def cancel(self, ctx, alert_num: int):
+    async def cancel(self, ctx, alert_num: str):
         """
         Cancels an alert notification made for the channel
 
+        @param ctx - context of the command sent
         @param alert_num - number of the specific alert to remove
         """
-        await self.cmd_function.remove_alert(ctx)
+        await self.cmd_function.remove_alert(ctx, alert_num)
 
     @commands.command(name='geta', pass_context=True)
-    async def geta(self):
+    async def geta(self, ctx):
         """
         Gets the list of alerts made for the channel
+
+        @param ctx - context of the command sent
         """
-        await self.cmd_function.get_alert_list()
+        await self.cmd_function.get_alert_list(ctx)
 
 
 class CommandFunctionality:
@@ -245,6 +253,7 @@ class CommandFunctionality:
     Handles CMC command functionality
     """
     def __init__(self, bot):
+        self.supported_operators = ["<", ">", "<=", ">="]
         with open('config.json') as config:
             self.config_data = json.load(config)
         with open('alerts.json') as alerts:
@@ -763,7 +772,9 @@ class CommandFunctionality:
                         msg += "__**{}**__\n".format(currency.title())
                 else:
                     msg = "Channel does not have any currencies to display."
-                await self.bot.say(msg)
+                    await self.bot.say(msg)
+            else:
+                await self.bot.say("Channel was never subscribed.")
         except Forbidden:
             pass
         except Exception as e:
@@ -850,6 +861,26 @@ class CommandFunctionality:
             print("An error has occured. See error.log.")
             logger.error("Exception: {}".format(str(e)))
 
+    def _translate_operation_(self, operator):
+        """
+        Translates the supported operations for alerts
+        into english
+
+        @param operator - operator condition to notify the channel
+        """
+        if operator in self.supported_operators:
+            if operator == "<":
+                operator_translation = "less than"
+            elif operator == "<=":
+                operator_translation = "less than or equal to"
+            elif operator == ">":
+                operator_translation = "greater than"
+            elif operator == ">=":
+                operator_translation = "greater than or equal to"
+            return operator_translation
+        else:
+            raise Exception("Unable to translate operation.")
+
     async def add_alert(self, ctx, currency, operator, price, fiat):
         """
         Adds an alert to alerts.json
@@ -862,7 +893,6 @@ class CommandFunctionality:
         # await bot.send_message(await bot.get_user_info("133108920511234048"), "")
         try:
             ucase_fiat = self.coin_market.fiat_check(fiat)
-            supported_operators = ["<", ">", "<=", ">="]
             if currency.upper() in self.acronym_list:
                 currency = self.acronym_list[currency.upper()]
                 if "Duplicate" in currency:
@@ -883,7 +913,7 @@ class CommandFunctionality:
             alert_list[len_alerts] = {}
             channel_alert = alert_list[len_alerts]
             channel_alert["currency"] = currency
-            if operator in supported_operators:
+            if operator in self.supported_operators:
                 channel_alert["operation"] = operator
             else:
                 await self.bot.say("Invalid operator: {}".format(operator))
@@ -895,9 +925,89 @@ class CommandFunctionality:
                           outfile,
                           indent=4)
             await self.bot.say("Alert has been set.")
+        except CurrencyException as e:
+            logger.error("CurrencyException: {}".format(str(e)))
+            await self.bot.say(e)
         except FiatException as e:
             logger.error("FiatException: {}".format(str(e)))
             self.live_on = False
+            await self.bot.say(e)
+        except Exception as e:
+            print("An error has occured. See error.log.")
+            logger.error("Exception: {}".format(str(e)))
+
+    async def remove_alert(self, ctx, alert_num):
+        """
+        Removes an alert from the user's list of alerts
+
+        @param ctx - context of the command sent
+        @param alert_num - number of the specific alert to remove
+        """
+        try:
+            # need to create a case for re-adding key
+            alert_num = alert_num.replace('.', '')
+            user_id = str(ctx.message.author.id)
+            user_list = self.alert_data
+            alert_setting = user_list[user_id]
+            if alert_num in alert_setting:
+                alert_currency = alert_setting[alert_num]["currency"]
+                alert_operation = self._translate_operation_(alert_setting[alert_num]["operation"])
+                alert_price = alert_setting[alert_num]["price"]
+                alert_fiat = alert_setting[alert_num]["fiat"]
+                alert_setting.pop(alert_num)
+                with open('alerts.json', 'w') as outfile:
+                    json.dump(self.config_data,
+                              outfile,
+                              indent=4)
+                await self.bot.say("Alert **{}** where **{}** is **{}** **{}** "
+                                   "in **{}** was successfully "
+                                   "removed.".format(alert_num,
+                                                     alert_currency,
+                                                     alert_operation,
+                                                     alert_price,
+                                                     alert_fiat))
+            else:
+                await self.bot.say("The number you've entered does not exist "
+                                   "in the alert list.")
+        except Forbidden:
+            pass
+        except CurrencyException as e:
+            logger.error("CurrencyException: {}".format(str(e)))
+            await self.bot.say(e)
+        except Exception as e:
+            print("An error has occured. See error.log.")
+            logger.error("Exception: {}".format(str(e)))
+
+    async def get_alert_list(self, ctx):
+        """
+        Gets the list of alerts and displays them
+
+        @param ctx - context of the command sent
+        """
+        try:
+            user_id = ctx.message.author.id
+            user_list = self.alert_data
+            if user_id in user_list:
+                alert_list = user_list[user_id]
+                if len(alert_list) != 0:
+                    msg = "The following alerts have been set:\n"
+                    for alert in alert_list:
+                        operation = self._translate_operation_(alert_list[alert]["operation"])
+                        msg += ("**{}.** Alert when **{}** is **{}** **{}** "
+                                " in **{}**\n".format(alert,
+                                                      alert_list[alert]["currency"],
+                                                      operation,
+                                                      alert_list[alert]["price"],
+                                                      alert_list[alert]["fiat"]))
+                else:
+                    msg = "Channel does not have any currencies to display."
+            else:
+                msg = "User never created any alerts."
+            await self.bot.say(msg)
+        except Forbidden:
+            pass
+        except CurrencyException as e:
+            logger.error("CurrencyException: {}".format(str(e)))
             await self.bot.say(e)
         except Exception as e:
             print("An error has occured. See error.log.")
