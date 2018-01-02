@@ -903,15 +903,15 @@ class CommandFunctionality:
             user_id = ctx.message.author.id
             if user_id not in self.alert_data:
                 self.alert_data[user_id] = {}
-            len_alerts = len(self.alert_data[user_id]) + 1
+            alert_num = str(len(self.alert_data[user_id]) + 1)
             alert_cap = int(self.config_data["alert_capacity"])
-            if len_alerts > alert_cap:
+            if int(alert_num) > alert_cap:
                 await self.bot.say("Unable to add alert, user alert capacity of"
                                    " **{}** has been reached.".format(alert_cap))
                 return
             alert_list = self.alert_data[user_id]
-            alert_list[len_alerts] = {}
-            channel_alert = alert_list[len_alerts]
+            alert_list[alert_num] = {}
+            channel_alert = alert_list[alert_num]
             channel_alert["currency"] = currency
             if operator in self.supported_operators:
                 channel_alert["operation"] = operator
@@ -944,24 +944,28 @@ class CommandFunctionality:
         @param alert_num - number of the specific alert to remove
         """
         try:
-            # need to create a case for re-adding key
             alert_num = alert_num.replace('.', '')
             user_id = str(ctx.message.author.id)
             user_list = self.alert_data
-            alert_setting = user_list[user_id]
-            if alert_num in alert_setting:
-                alert_currency = alert_setting[alert_num]["currency"]
-                alert_operation = self._translate_operation_(alert_setting[alert_num]["operation"])
-                alert_price = alert_setting[alert_num]["price"]
-                alert_fiat = alert_setting[alert_num]["fiat"]
-                alert_setting.pop(alert_num)
+            alert_list = user_list[user_id]
+            if alert_num in alert_list:
+                removed_alert = alert_num
+                alert_setting = alert_list[alert_num]
+                alert_currency = alert_setting["currency"]
+                alert_operation = self._translate_operation_(alert_setting["operation"])
+                alert_price = alert_setting["price"]
+                alert_fiat = alert_setting["fiat"]
+                while int(alert_num) + 1 <= len(alert_list):
+                    alert_num = int(alert_num) + 1
+                    alert_list[str(int(alert_num)-1)] = alert_list[str(alert_num)]
+                alert_list.pop(str(alert_num))
                 with open('alerts.json', 'w') as outfile:
-                    json.dump(self.config_data,
+                    json.dump(self.alert_data,
                               outfile,
                               indent=4)
                 await self.bot.say("Alert **{}** where **{}** is **{}** **{}** "
                                    "in **{}** was successfully "
-                                   "removed.".format(alert_num,
+                                   "removed.".format(removed_alert,
                                                      alert_currency,
                                                      alert_operation,
                                                      alert_price,
