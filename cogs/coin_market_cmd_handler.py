@@ -256,8 +256,15 @@ class CommandFunctionality:
         self.supported_operators = ["<", ">", "<=", ">="]
         with open('config.json') as config:
             self.config_data = json.load(config)
-        with open('alerts.json') as alerts:
-            self.alert_data = json.load(alerts)
+        try:
+            with open('alerts.json') as alerts:
+                self.alert_data = json.load(alerts)
+        except FileNotFoundError:
+            with open('alerts.json', 'w') as outfile:
+                json.dump({},
+                          outfile,
+                          indent=4)
+                self.alert_data = json.loads('{}')
         self.bot = bot
         self.market_list = None
         self.market_stats = None
