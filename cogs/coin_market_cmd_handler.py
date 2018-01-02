@@ -881,6 +881,34 @@ class CommandFunctionality:
         else:
             raise Exception("Unable to translate operation.")
 
+    def _check_alert_(self, currency, operator, price, fiat):
+        """
+        Checks if the alert condition isn't already true
+
+        @param currency - cryptocurrency to set an alert of
+        @param operator - operator condition to notify the channel
+        @param price - price for condition to compare
+        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
+        @return - True if condition doesn't exist, False if it does
+        """
+        market_price = float(self.market_list[currency]["price_usd"])
+        if operator in self.supported_operators:
+            if operator == "<":
+                if market_price < float(price):
+                    return False
+            elif operator == "<=":
+                if market_price <= float(price):
+                    return False
+            elif operator == ">":
+                if market_price > float(price):
+                    return False
+            elif operator == ">=":
+                if market_price >= float(price):
+                    return False
+            return True
+        else:
+            raise Exception
+
     async def add_alert(self, ctx, currency, operator, price, fiat):
         """
         Adds an alert to alerts.json
@@ -900,6 +928,15 @@ class CommandFunctionality:
                     return
             if currency not in self.market_list:
                 raise CurrencyException("Currency is invalid: ``{}``".format(currency))
+            try:
+                if not self._check_alert_(currency, operator, price, ucase_fiat):
+                    await self.bot.say("Failed to create alert. Current price "
+                                       "of **{}** already meets the condition."
+                                       "".format(currency.title()))
+                    return
+            except Exception:
+                await self.bot.say("Invalid operator: **{}**".format(operator))
+                return
             user_id = ctx.message.author.id
             if user_id not in self.alert_data:
                 self.alert_data[user_id] = {}
@@ -916,7 +953,9 @@ class CommandFunctionality:
             if operator in self.supported_operators:
                 channel_alert["operation"] = operator
             else:
-                await self.bot.say("Invalid operator: {}".format(operator))
+                await self.bot.say("Invalid operator: {}. Your choices are **<*"
+                                   "*, **<=**, **>**, or **>=**"
+                                   "".format(operator))
                 return
             channel_alert["price"] = "{:.6f}".format(price)
             channel_alert["fiat"] = ucase_fiat
@@ -1004,7 +1043,7 @@ class CommandFunctionality:
                                                       alert_list[alert]["price"],
                                                       alert_list[alert]["fiat"]))
                 else:
-                    msg = "Channel does not have any currencies to display."
+                    msg = "Channel does not have any alerts to display."
             else:
                 msg = "User never created any alerts."
             await self.bot.say(msg)
