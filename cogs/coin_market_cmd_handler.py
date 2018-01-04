@@ -1,5 +1,6 @@
 from bot_logger import logger
 from cogs.modules.coin_market import CoinMarket, CoinMarketException, CurrencyException, FiatException, MarketStatsException
+from collections import defaultdict
 from discord.ext import commands
 from discord.errors import Forbidden
 import asyncio
@@ -207,9 +208,9 @@ class SubscriberCommands:
         await self.cmd_function.toggle_purge(ctx)
 
 
-class NotificationCommands:
+class AlertCommands:
     """
-    Handles commands for notifications of crypto prices
+    Handles commands for alert notifications of crypto prices
     """
     def __init__(self, cmd_function):
         self.cmd_function = cmd_function
@@ -278,6 +279,7 @@ class CommandFunctionality:
         if self.config_data['load_acronyms']:
             self.acronym_list = self._load_acronyms()
         yield from self._display_live_data()
+        yield from self._alert_user_()
 
     @asyncio.coroutine
     def _continuous_updates(self):
@@ -505,9 +507,13 @@ class CommandFunctionality:
             if currency1.upper() in self.acronym_list:
                 acronym1 = currency1.upper()
                 currency1 = self.acronym_list[currency1.upper()]
+            else:
+                acronym1 = self.market_list[currency1]["symbol"]
             if currency2.upper() in self.acronym_list:
                 acronym2 = currency2.upper()
                 currency2 = self.acronym_list[currency2.upper()]
+            else:
+                acronym2 = self.market_list[currency2]["symbol"]
             price_btc1 = float(self.market_list[currency1]['price_btc'])
             price_btc2 = float(self.market_list[currency2]['price_btc'])
             btc_amt = float("{:.8f}".format(currency_amt * price_btc1))
@@ -890,7 +896,7 @@ class CommandFunctionality:
 
     def _check_alert_(self, currency, operator, price, fiat):
         """
-        Checks if the alert condition isn't already true
+        Checks if the alert condition isn't true
 
         @param currency - cryptocurrency to set an alert of
         @param operator - operator condition to notify the channel
@@ -925,8 +931,9 @@ class CommandFunctionality:
         @param price - price for condition to compare
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
-        # await bot.send_message(await bot.get_user_info("133108920511234048"), "")
         try:
+            i = 1
+            alert_num = None
             ucase_fiat = self.coin_market.fiat_check(fiat)
             if currency.upper() in self.acronym_list:
                 currency = self.acronym_list[currency.upper()]
@@ -944,10 +951,15 @@ class CommandFunctionality:
             except Exception:
                 await self.bot.say("Invalid operator: **{}**".format(operator))
                 return
-            user_id = ctx.message.author.id
+            user_id = str(ctx.message.author.id)
             if user_id not in self.alert_data:
                 self.alert_data[user_id] = {}
-            alert_num = str(len(self.alert_data[user_id]) + 1)
+            while i <= len(self.alert_data[user_id]) + 1:
+                if str(i) not in self.alert_data[user_id]:
+                    alert_num = str(i)
+                i += 1
+            if alert_num is None:
+                raise Exception("Something went wrong with adding alert.")
             alert_cap = int(self.config_data["alert_capacity"])
             if int(alert_num) > alert_cap:
                 await self.bot.say("Unable to add alert, user alert capacity of"
@@ -964,7 +976,9 @@ class CommandFunctionality:
                                    "*, **<=**, **>**, or **>=**"
                                    "".format(operator))
                 return
-            channel_alert["price"] = "{:.6f}".format(price)
+            channel_alert["price"] = ("{:.6f}".format(price)).rstrip('0')
+            if channel_alert["price"].endswith('.'):
+                channel_alert["price"] = channel_alert["price"].replace('.', '')
             channel_alert["fiat"] = ucase_fiat
             with open('alerts.json', 'w') as outfile:
                 json.dump(self.alert_data,
@@ -982,6 +996,15 @@ class CommandFunctionality:
             print("An error has occured. See error.log.")
             logger.error("Exception: {}".format(str(e)))
 
+    def _save_alert_file_(self):
+        """
+        Saves alerts.json file
+        """
+        with open('alerts.json', 'w') as outfile:
+            json.dump(self.alert_data,
+                      outfile,
+                      indent=4)
+
     async def remove_alert(self, ctx, alert_num):
         """
         Removes an alert from the user's list of alerts
@@ -990,7 +1013,6 @@ class CommandFunctionality:
         @param alert_num - number of the specific alert to remove
         """
         try:
-            alert_num = alert_num.replace('.', '')
             user_id = str(ctx.message.author.id)
             user_list = self.alert_data
             alert_list = user_list[user_id]
@@ -1001,14 +1023,8 @@ class CommandFunctionality:
                 alert_operation = self._translate_operation_(alert_setting["operation"])
                 alert_price = alert_setting["price"]
                 alert_fiat = alert_setting["fiat"]
-                while int(alert_num) + 1 <= len(alert_list):
-                    alert_num = int(alert_num) + 1
-                    alert_list[str(int(alert_num)-1)] = alert_list[str(alert_num)]
                 alert_list.pop(str(alert_num))
-                with open('alerts.json', 'w') as outfile:
-                    json.dump(self.alert_data,
-                              outfile,
-                              indent=4)
+                self._save_alert_file_()
                 await self.bot.say("Alert **{}** where **{}** is **{}** **{}** "
                                    "in **{}** was successfully "
                                    "removed.".format(removed_alert,
@@ -1037,23 +1053,27 @@ class CommandFunctionality:
         try:
             user_id = ctx.message.author.id
             user_list = self.alert_data
+            msg = {}
+            result_msg = ""
             if user_id in user_list:
                 alert_list = user_list[user_id]
                 if len(alert_list) != 0:
-                    msg = "The following alerts have been set:\n"
+                    msg[0] = "The following alerts have been set:\n"
                     for alert in alert_list:
                         operation = self._translate_operation_(alert_list[alert]["operation"])
-                        msg += ("**{}.** Alert when **{}** is **{}** **{}** "
-                                " in **{}**\n".format(alert,
-                                                      alert_list[alert]["currency"],
-                                                      operation,
-                                                      alert_list[alert]["price"],
-                                                      alert_list[alert]["fiat"]))
+                        msg[int(alert)] = ("[**{}**] Alert when **{}** is **{}** **{}** "
+                                           " in **{}**\n".format(alert,
+                                                                 alert_list[alert]["currency"],
+                                                                 operation,
+                                                                 alert_list[alert]["price"],
+                                                                 alert_list[alert]["fiat"]))
+                    for line in sorted(msg):
+                        result_msg += msg[line]
                 else:
-                    msg = "Channel does not have any alerts to display."
+                    result_msg = "Channel does not have any alerts to display."
             else:
-                msg = "User never created any alerts."
-            await self.bot.say(msg)
+                result_msg = "User never created any alerts."
+            await self.bot.say(result_msg)
         except Forbidden:
             pass
         except CurrencyException as e:
@@ -1063,9 +1083,46 @@ class CommandFunctionality:
             print("An error has occured. See error.log.")
             logger.error("Exception: {}".format(str(e)))
 
+    async def _alert_user_(self):
+        """
+        Checks and displays alerts that have met the condition of the
+        cryptocurrency price
+        """
+        try:
+            raised_alerts = defaultdict(list)
+            for user in self.alert_data:
+                alert_list = self.alert_data[str(user)]
+                for alert in alert_list:
+                    alert_currency = alert_list[alert]["currency"]
+                    operator_symbol = alert_list[alert]["operation"]
+                    alert_operator = self._translate_operation_(operator_symbol)
+                    alert_price = alert_list[alert]["price"]
+                    alert_fiat = alert_list[alert]["fiat"]
+                    if not self._check_alert_(alert_currency, operator_symbol,
+                                              alert_price, alert_fiat):
+                        raised_alerts[user].append(alert)
+                        user_obj = await self.bot.get_user_info(user)
+                        await self.bot.send_message(user_obj,
+                                                    "Alert **{}**! "
+                                                    "**{}** is **{}** **{}** "
+                                                    "in **{}**"
+                                                    "".format(alert,
+                                                              alert_currency.title(),
+                                                              alert_operator,
+                                                              alert_price,
+                                                              alert_fiat))
+            if raised_alerts:
+                for user in raised_alerts:
+                    for alert_num in raised_alerts[user]:
+                        self.alert_data[user].pop(str(alert_num))
+                self._save_alert_file_()
+        except Exception as e:
+            print("An error has occured. See error.log.")
+            logger.error("Exception: {}".format(str(e)))
+
 
 def setup(bot):
     cmd_function = CommandFunctionality(bot)
     bot.add_cog(CoinMarketCommands(cmd_function))
     bot.add_cog(SubscriberCommands(cmd_function))
-    bot.add_cog(NotificationCommands(cmd_function))
+    bot.add_cog(AlertCommands(cmd_function))
