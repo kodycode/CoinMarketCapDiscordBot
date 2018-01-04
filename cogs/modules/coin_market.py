@@ -61,24 +61,29 @@ class CoinMarket:
             raise FiatException(error_msg)
         return fiat
 
-    def format_price(self, price, fiat):
+    def format_price(self, price, fiat, symbol=True):
         """
         Formats price under the desired fiat
 
         @param price - price to format
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
+        @param symbol - if True add currency symbol to fiat
+                        if False symbol will not be added
         @return - formatted price under fiat
         """
         c = CurrencyConverter()
         ucase_fiat = fiat.upper()
         if fiat is not "USD":
             price = float(c.convert(float(price), "USD", fiat))
-        if ucase_fiat in fiat_suffix:
-            formatted_fiat = "{:,.6f} {}".format(float(price),
-                                                 fiat_currencies[ucase_fiat])
+        if symbol:
+            if ucase_fiat in fiat_suffix:
+                formatted_fiat = "{:,.6f} {}".format(float(price),
+                                                     fiat_currencies[ucase_fiat])
+            else:
+                formatted_fiat = "{}{:,.6f}".format(fiat_currencies[ucase_fiat],
+                                                    float(price))
         else:
-            formatted_fiat = "{}{:,.6f}".format(fiat_currencies[ucase_fiat],
-                                                float(price))
+            formatted_fiat = str(price)
         formatted_fiat = formatted_fiat.rstrip('0')
         if formatted_fiat.endswith('.'):
             formatted_fiat = formatted_fiat.replace('.', '')

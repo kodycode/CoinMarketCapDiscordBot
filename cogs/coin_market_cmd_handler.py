@@ -705,7 +705,7 @@ class CommandFunctionality:
                 game_status = discord.Game(name="with {} subscriber(s)".format(num_channels))
                 await self.bot.change_presence(game=game_status)
                 await self.bot.say("Channel has succcesfully subscribed. Now "
-                                   "add some currencies with $addc to begin "
+                                   "add some currencies with `$addc` to begin "
                                    "receiving updates.")
             else:
                 await self.bot.say("Channel is already subscribed.")
@@ -905,6 +905,9 @@ class CommandFunctionality:
         @return - True if condition doesn't exist, False if it does
         """
         market_price = float(self.market_list[currency]["price_usd"])
+        market_price = float(self.coin_market.format_price(market_price,
+                                                           fiat,
+                                                           False))
         if operator in self.supported_operators:
             if operator == "<":
                 if market_price < float(price):
