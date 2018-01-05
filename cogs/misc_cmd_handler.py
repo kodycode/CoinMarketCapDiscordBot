@@ -16,15 +16,6 @@ class MiscCommands:
         """
         await self.cmd_function.display_bot_profile()
 
-    @commands.command(name="contact")
-    async def contact(self):
-        """
-        Shows contact information
-        An example for this command would be:
-        "$donate"
-        """
-        await self.cmd_function.display_contact()
-
     @commands.command(name="donate")
     async def donate(self):
         """
@@ -33,3 +24,12 @@ class MiscCommands:
         "$donate"
         """
         await self.cmd_function.display_donation_option()
+
+    @commands.command(name="info")
+    async def info(self):
+        """
+        Shows donation options
+        An example for this command would be:
+        "$donate"
+        """
+        await self.cmd_function.display_info()
