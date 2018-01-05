@@ -56,7 +56,8 @@ class CoinMarketBot:
 
     @bot.event
     async def on_message(message):
-        await bot.process_commands(message)
+        if not message.author.bot:
+            await bot.process_commands(message)
 
     @bot.event
     async def on_command_error(error, ctx):
