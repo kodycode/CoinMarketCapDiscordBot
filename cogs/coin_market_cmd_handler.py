@@ -220,9 +220,14 @@ class AlertCommands:
         """
         Adds an alert notification for the user when a price meets the condition specified
         An example for this command would be:
-        "$alert bitcoin <= 15000"
+        "$adda bitcoin <= 15000"
 
         @param currency - cryptocurrency to set an alert of
+        @param operator - operator for the given choices
+                          <  - less than
+                          <= - less than or equal to
+                          >  - greater than
+                          >= - greater than or equal to
         @param condition - condition to notify the channel
         @param price - price for condition to compare
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
@@ -233,6 +238,8 @@ class AlertCommands:
     async def rema(self, ctx, alert_num: str):
         """
         Removes an alert notification made from the user
+        An example for this command would be:
+        "$rema 5"
 
         @param ctx - context of the command sent
         @param alert_num - number of the specific alert to remove
@@ -243,6 +250,8 @@ class AlertCommands:
     async def geta(self, ctx):
         """
         Gets the list of alerts made for the user
+        An example for this command would be:
+        "$geta"
 
         @param ctx - context of the command sent
         """
@@ -1037,7 +1046,8 @@ class CommandFunctionality:
                                                      alert_fiat))
             else:
                 await self.bot.say("The number you've entered does not exist "
-                                   "in the alert list.")
+                                   "in the alert list. Use `$geta` to receive "
+                                   "a list of ongoing alerts.")
         except Forbidden:
             pass
         except CurrencyException as e:
