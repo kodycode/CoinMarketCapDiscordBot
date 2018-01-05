@@ -224,7 +224,7 @@ class CommandFunctionality:
                 if self.bot.get_channel(channel) in self.bot.get_all_channels():
                     channel_settings = subscriber_list[channel]
                     if channel_settings["currencies"]:
-                        if channel_settings["purge"] is True:
+                        if channel_settings["purge"]:
                             try:
                                 await self.bot.purge_from(self.bot.get_channel(channel),
                                                           limit=100)
