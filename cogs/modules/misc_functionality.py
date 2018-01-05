@@ -41,9 +41,8 @@ class MiscFunctionality:
         """
         try:
             username = await self.bot.get_user_info(str(133108920511234048))
-            with open('subscribers.json') as config:
-                config_data = json.load(config)
-                subscriber_list = config_data["subscriber_list"][0]
+            with open('subscribers.json') as subscribers:
+                subscriber_list = json.load(subscribers)
             em = discord.Embed(colour=0xFFFFFF)
             em.set_author(name=self.bot.user,
                           icon_url=self.bot.user.avatar_url)

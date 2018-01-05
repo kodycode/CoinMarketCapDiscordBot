@@ -17,8 +17,6 @@ Click [here](https://discordapp.com/oauth2/authorize?client_id=35337350127445606
 3. Enter your discord token inside the token variable in `config.json`
 4. Run with ```python bot.py```
 
-```load_acronyms``` will load all the crypto acronyms so you can search for any cryptocurrency with just the acronym. For example, rather than searching with ```$s bitcoin```, you can just type ```$s btc```.
-
 ## Commands:
 This bot has commands to look up cryptocurrencies, subscribe to live updates, create crypto price alerts for the user, and many more.
 

@@ -14,30 +14,48 @@ class CommandFunctionality:
 
     def __init__(self, bot):
         self.supported_operators = ["<", ">", "<=", ">="]
-        try:
-            with open('subscribers.json') as config:
-                self.subscriber_data = json.load(config)
-        except FileNotFoundError:
-            with open('alerts.json', 'w') as outfile:
-                json.dump({},
-                          outfile,
-                          indent=4)
-                self.alert_data = json.loads('{}')
-        try:
-            with open('alerts.json') as alerts:
-                self.alert_data = json.load(alerts)
-        except FileNotFoundError:
-            with open('alerts.json', 'w') as outfile:
-                json.dump({},
-                          outfile,
-                          indent=4)
-                self.alert_data = json.loads('{}')
+        self.subscriber_data = self._check_subscriber_file()
+        self.alert_data = self._check_alert_file()
         self.bot = bot
         self.market_list = None
         self.market_stats = None
         self.coin_market = CoinMarket()
         self.live_on = False
         asyncio.async(self._continuous_updates())
+
+    def _check_subscriber_file(self):
+        """
+        Checks to see if there's a valid subscribers.json file
+        """
+        try:
+            with open('subscribers.json') as subscribers:
+                return json.load(subscribers)
+        except FileNotFoundError:
+            with open('subscribers.json', 'w') as outfile:
+                json.dump({},
+                          outfile,
+                          indent=4)
+                return json.loads('{}')
+        except Exception as e:
+            print("An error has occured. See error.log.")
+            logger.error("Exception: {}".format(str(e)))
+
+    def _check_alert_file(self):
+        """
+        Checks to see if there's a valid alerts.json file
+        """
+        try:
+            with open('alerts.json') as alerts:
+                return json.load(alerts)
+        except FileNotFoundError:
+            with open('alerts.json', 'w') as outfile:
+                json.dump({},
+                          outfile,
+                          indent=4)
+                return json.loads('{}')
+        except Exception as e:
+            print("An error has occured. See error.log.")
+            logger.error("Exception: {}".format(str(e)))
 
     @asyncio.coroutine
     def _update_data(self):
@@ -200,11 +218,11 @@ class CommandFunctionality:
         """
         try:
             # remove_channels = []
-            subscriber_list = self.config_data["subscriber_list"][0]
+            subscriber_list = self.subscriber_data
             msg_count = 0
             for channel in subscriber_list:
                 if self.bot.get_channel(channel) in self.bot.get_all_channels():
-                    channel_settings = subscriber_list[channel][0]
+                    channel_settings = subscriber_list[channel]
                     if channel_settings["currencies"]:
                         if channel_settings["purge"] is True:
                             try:
@@ -237,7 +255,7 @@ class CommandFunctionality:
             #         if channel in subscriber_list:
             #             subscriber_list.pop(channel)
             #     with open('subscribers.json', 'w') as outfile:
-            #         json.dump(self.config_data,
+            #         json.dump(self.subscriber_data,
             #                   outfile,
             #                   indent=4)
             #     num_channels = len(subscriber_list)
@@ -438,6 +456,15 @@ class CommandFunctionality:
             print("An error has occured. See error.log.")
             logger.error("Exception: {}".format(str(e)))
 
+    def _save_subscriber_file(self):
+        """
+        Saves subscribers.json file
+        """
+        with open('subscribers.json', 'w') as outfile:
+            json.dump(self.subscriber_data,
+                      outfile,
+                      indent=4)
+
     async def add_subscriber(self, ctx, fiat):
         """
         Adds channel to the live update subscriber list in subscribers.json
@@ -448,7 +475,7 @@ class CommandFunctionality:
         try:
             ucase_fiat = self.coin_market.fiat_check(fiat)
             channel = str(ctx.message.channel.id)
-            subscriber_list = self.config_data["subscriber_list"][0]
+            subscriber_list = self.subscriber_data
             try:
                 self.bot.get_channel(channel).server  # validate channel
             except:
@@ -457,15 +484,12 @@ class CommandFunctionality:
                                    "valid server.")
                 return
             if channel not in subscriber_list:
-                subscriber_list[channel] = [{}]
-                channel_settings = subscriber_list[channel][0]
+                subscriber_list[channel] = {}
+                channel_settings = subscriber_list[channel]
                 channel_settings["purge"] = False
                 channel_settings["fiat"] = ucase_fiat
                 channel_settings["currencies"] = []
-                with open('subscribers.json', 'w') as outfile:
-                    json.dump(self.config_data,
-                              outfile,
-                              indent=4)
+                self._save_subscriber_file()
                 num_channels = len(subscriber_list)
                 game_status = discord.Game(name="with {} subscriber(s)".format(num_channels))
                 await self.bot.change_presence(game=game_status)
@@ -486,13 +510,10 @@ class CommandFunctionality:
         """
         try:
             channel = ctx.message.channel.id
-            subscriber_list = self.config_data["subscriber_list"][0]
+            subscriber_list = self.subscriber_data
             if channel in subscriber_list:
                 subscriber_list.pop(channel)
-                with open('subscribers.json', 'w') as outfile:
-                    json.dump(self.config_data,
-                              outfile,
-                              indent=4)
+                self._save_subscriber_file()
                 num_channels = len(subscriber_list)
                 game_status = discord.Game(name="with {} subscriber(s)".format(num_channels))
                 await self.bot.change_presence(game=game_status)
@@ -511,17 +532,14 @@ class CommandFunctionality:
         """
         try:
             channel = ctx.message.channel.id
-            subscriber_list = self.config_data["subscriber_list"][0]
+            subscriber_list = self.subscriber_data
             self.bot.get_channel(channel).server  # validate channel
             if channel not in subscriber_list:
                 await self.bot.say("Channel was never subscribed.")
                 return
-            channel_settings = subscriber_list[channel][0]
+            channel_settings = subscriber_list[channel]
             channel_settings["purge"] = not channel_settings["purge"]
-            with open('subscribers.json', 'w') as outfile:
-                json.dump(self.config_data,
-                          outfile,
-                          indent=4)
+            self._save_subscriber_file()
             if channel_settings["purge"]:
                 await self.bot.say("Purge mode on. Bot will now purge messages upon"
                                    " live updates. Please make sure your bot has "
@@ -540,9 +558,9 @@ class CommandFunctionality:
         """
         try:
             channel = str(ctx.message.channel.id)
-            subscriber_list = self.config_data["subscriber_list"][0]
+            subscriber_list = self.subscriber_data
             if channel in subscriber_list:
-                channel_settings = subscriber_list[channel][0]
+                channel_settings = subscriber_list[channel]
                 currency_list = channel_settings["currencies"]
                 if len(currency_list) != 0:
                     msg = "Currently this channel displays the following:\n"
@@ -575,17 +593,14 @@ class CommandFunctionality:
             if currency not in self.market_list:
                 raise CurrencyException("Currency is invalid: ``{}``".format(currency))
             channel = ctx.message.channel.id
-            subscriber_list = self.config_data["subscriber_list"][0]
+            subscriber_list = self.subscriber_data
             if channel in subscriber_list:
-                channel_settings = subscriber_list[channel][0]
+                channel_settings = subscriber_list[channel]
                 if currency in channel_settings["currencies"]:
                     await self.bot.say("``{}`` is already added.".format(currency.title()))
                     return
                 channel_settings["currencies"].append(currency)
-                with open('subscribers.json', 'w') as outfile:
-                    json.dump(self.config_data,
-                              outfile,
-                              indent=4)
+                self._save_subscriber_file()
                 await self.bot.say("``{}`` was successfully added.".format(currency.title()))
             else:
                 await self.bot.say("The channel needs to be subscribed first.")
@@ -615,15 +630,12 @@ class CommandFunctionality:
                     await self.bot.say(currency)
                     return
             channel = ctx.message.channel.id
-            subscriber_list = self.config_data["subscriber_list"][0]
+            subscriber_list = self.subscriber_data
             if channel in subscriber_list:
-                channel_settings = subscriber_list[channel][0]
+                channel_settings = subscriber_list[channel]
                 if currency in channel_settings["currencies"]:
                     channel_settings["currencies"].remove(currency)
-                    with open('subscribers.json', 'w') as outfile:
-                        json.dump(self.config_data,
-                                  outfile,
-                                  indent=4)
+                    self._save_subscriber_file()
                     await self.bot.say("``{}`` was successfully removed.".format(currency.title()))
                     return
                 else:
@@ -728,7 +740,7 @@ class CommandFunctionality:
                 i += 1
             if alert_num is None:
                 raise Exception("Something went wrong with adding alert.")
-            alert_cap = int(self.config_data["alert_capacity"])
+            alert_cap = int(self.subscriber_data["alert_capacity"])
             if int(alert_num) > alert_cap:
                 await self.bot.say("Unable to add alert, user alert capacity of"
                                    " **{}** has been reached.".format(alert_cap))
