@@ -36,9 +36,8 @@ class MarketStatsException(Exception):
 
 
 class CoinMarket:
-    """
-    Handles CoinMarketCap API features
-    """
+    """Handles CoinMarketCap API features"""
+
     def __init__(self):
         """
         Initiates CoinMarket

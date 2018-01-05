@@ -8,8 +8,7 @@ import requests
 bot = commands.Bot(command_prefix='$', description='Displays market data from https://coinmarketcap.com/')
 
 initial_extensions = [
-    'cogs.coin_market_cmd_handler',
-    'cogs.misc_cmd_handler'
+    'cogs.cog_manager'
 ]
 
 DISCORD_BOT_URL = "https://discordbots.org/api/bots/353373501274456065/stats"
