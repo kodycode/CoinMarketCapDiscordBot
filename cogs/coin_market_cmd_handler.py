@@ -1065,11 +1065,11 @@ class CommandFunctionality:
                     for alert in alert_list:
                         operation = self._translate_operation_(alert_list[alert]["operation"])
                         msg[int(alert)] = ("[**{}**] Alert when **{}** is **{}** **{}** "
-                                           " in **{}**\n".format(alert,
-                                                                 alert_list[alert]["currency"],
-                                                                 operation,
-                                                                 alert_list[alert]["price"],
-                                                                 alert_list[alert]["fiat"]))
+                                           "in **{}**\n".format(alert,
+                                                                alert_list[alert]["currency"],
+                                                                operation,
+                                                                alert_list[alert]["price"],
+                                                                alert_list[alert]["fiat"]))
                     for line in sorted(msg):
                         result_msg += msg[line]
                 else:
