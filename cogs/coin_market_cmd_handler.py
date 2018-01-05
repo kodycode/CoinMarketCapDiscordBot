@@ -215,10 +215,10 @@ class AlertCommands:
     def __init__(self, cmd_function):
         self.cmd_function = cmd_function
 
-    @commands.command(name='alert', pass_context=True)
-    async def alert(self, ctx, currency: str, operator: str, price: float, fiat='USD'):
+    @commands.command(name='adda', pass_context=True)
+    async def adda(self, ctx, currency: str, operator: str, price: float, fiat='USD'):
         """
-        Adds an alert to the channel when a price meets the condition specified
+        Adds an alert notification for the user when a price meets the condition specified
         An example for this command would be:
         "$alert bitcoin <= 15000"
 
@@ -229,10 +229,10 @@ class AlertCommands:
         """
         await self.cmd_function.add_alert(ctx, currency, operator, price, fiat)
 
-    @commands.command(name='cancel', pass_context=True)
-    async def cancel(self, ctx, alert_num: str):
+    @commands.command(name='rema', pass_context=True)
+    async def rema(self, ctx, alert_num: str):
         """
-        Cancels an alert notification made for the channel
+        Removes an alert notification made from the user
 
         @param ctx - context of the command sent
         @param alert_num - number of the specific alert to remove
@@ -242,7 +242,7 @@ class AlertCommands:
     @commands.command(name='geta', pass_context=True)
     async def geta(self, ctx):
         """
-        Gets the list of alerts made for the channel
+        Gets the list of alerts made for the user
 
         @param ctx - context of the command sent
         """
