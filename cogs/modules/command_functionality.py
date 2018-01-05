@@ -14,8 +14,15 @@ class CommandFunctionality:
 
     def __init__(self, bot):
         self.supported_operators = ["<", ">", "<=", ">="]
-        with open('config.json') as config:
-            self.config_data = json.load(config)
+        try:
+            with open('subscribers.json') as config:
+                self.subscriber_data = json.load(config)
+        except FileNotFoundError:
+            with open('alerts.json', 'w') as outfile:
+                json.dump({},
+                          outfile,
+                          indent=4)
+                self.alert_data = json.loads('{}')
         try:
             with open('alerts.json') as alerts:
                 self.alert_data = json.load(alerts)
@@ -35,8 +42,7 @@ class CommandFunctionality:
     @asyncio.coroutine
     def _update_data(self):
         self._update_market()
-        if self.config_data['load_acronyms']:
-            self.acronym_list = self._load_acronyms()
+        self.acronym_list = self._load_acronyms()
         yield from self._display_live_data()
         yield from self._alert_user_()
 
@@ -230,7 +236,7 @@ class CommandFunctionality:
             #     for channel in remove_channels:
             #         if channel in subscriber_list:
             #             subscriber_list.pop(channel)
-            #     with open('config.json', 'w') as outfile:
+            #     with open('subscribers.json', 'w') as outfile:
             #         json.dump(self.config_data,
             #                   outfile,
             #                   indent=4)
@@ -434,7 +440,7 @@ class CommandFunctionality:
 
     async def add_subscriber(self, ctx, fiat):
         """
-        Adds channel to the live update subscriber list in config.json
+        Adds channel to the live update subscriber list in subscribers.json
 
         @param ctx - context of the command sent
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
@@ -456,7 +462,7 @@ class CommandFunctionality:
                 channel_settings["purge"] = False
                 channel_settings["fiat"] = ucase_fiat
                 channel_settings["currencies"] = []
-                with open('config.json', 'w') as outfile:
+                with open('subscribers.json', 'w') as outfile:
                     json.dump(self.config_data,
                               outfile,
                               indent=4)
@@ -474,7 +480,7 @@ class CommandFunctionality:
 
     async def remove_subscriber(self, ctx):
         """
-        Removes channel from the subscriber list in config.json
+        Removes channel from the subscriber list in subscribers.json
 
         @param ctx - context of the command sent
         """
@@ -483,7 +489,7 @@ class CommandFunctionality:
             subscriber_list = self.config_data["subscriber_list"][0]
             if channel in subscriber_list:
                 subscriber_list.pop(channel)
-                with open('config.json', 'w') as outfile:
+                with open('subscribers.json', 'w') as outfile:
                     json.dump(self.config_data,
                               outfile,
                               indent=4)
@@ -512,7 +518,7 @@ class CommandFunctionality:
                 return
             channel_settings = subscriber_list[channel][0]
             channel_settings["purge"] = not channel_settings["purge"]
-            with open('config.json', 'w') as outfile:
+            with open('subscribers.json', 'w') as outfile:
                 json.dump(self.config_data,
                           outfile,
                           indent=4)
@@ -576,7 +582,7 @@ class CommandFunctionality:
                     await self.bot.say("``{}`` is already added.".format(currency.title()))
                     return
                 channel_settings["currencies"].append(currency)
-                with open('config.json', 'w') as outfile:
+                with open('subscribers.json', 'w') as outfile:
                     json.dump(self.config_data,
                               outfile,
                               indent=4)
@@ -614,7 +620,7 @@ class CommandFunctionality:
                 channel_settings = subscriber_list[channel][0]
                 if currency in channel_settings["currencies"]:
                     channel_settings["currencies"].remove(currency)
-                    with open('config.json', 'w') as outfile:
+                    with open('subscribers.json', 'w') as outfile:
                         json.dump(self.config_data,
                                   outfile,
                                   indent=4)

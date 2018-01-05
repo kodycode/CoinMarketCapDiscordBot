@@ -41,7 +41,7 @@ class MiscFunctionality:
         """
         try:
             username = await self.bot.get_user_info(str(133108920511234048))
-            with open('config.json') as config:
+            with open('subscribers.json') as config:
                 config_data = json.load(config)
                 subscriber_list = config_data["subscriber_list"][0]
             em = discord.Embed(colour=0xFFFFFF)
