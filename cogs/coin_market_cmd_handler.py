@@ -228,7 +228,6 @@ class AlertCommands:
                           <= - less than or equal to
                           >  - greater than
                           >= - greater than or equal to
-        @param condition - condition to notify the channel
         @param price - price for condition to compare
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
@@ -238,6 +237,7 @@ class AlertCommands:
     async def rema(self, ctx, alert_num: str):
         """
         Removes an alert notification made from the user
+        Use $geta to see what alert number's you can remove first.
         An example for this command would be:
         "$rema 5"
 
@@ -249,7 +249,7 @@ class AlertCommands:
     @commands.command(name='geta', pass_context=True)
     async def geta(self, ctx):
         """
-        Gets the list of alerts made for the user
+        Gets the list of alerts made from the user
         An example for this command would be:
         "$geta"
 
