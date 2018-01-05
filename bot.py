@@ -57,7 +57,12 @@ class CoinMarketBot:
     @bot.event
     async def on_message(message):
         if not message.author.bot:
-            await bot.process_commands(message)
+            if message.content.startswith("<@" + str(bot.user.id) + ">"):
+                await bot.send_message(message.channel,
+                                       "The prefix for this bot is `$`."
+                                       "Type `$help` for a list of commands.")
+            else:
+                await bot.process_commands(message)
 
     @bot.event
     async def on_command_error(error, ctx):
