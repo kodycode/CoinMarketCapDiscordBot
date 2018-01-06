@@ -15,8 +15,9 @@ Click [here](https://discordapp.com/oauth2/authorize?client_id=35337350127445606
 1. Install necessary requirements using ```pip install -r requirements.txt```
 2. Rename `config_template.json` to `config.json`
 3. Enter your discord token inside the token variable in `config.json`
-4. Run with ```python bot.py```
+4. Run with ```python bot.py``` or ```python3 bot.py```
 
+You're also given the option to change the command prefix as you see fit inside of the config.json.
 ## Commands:
 This bot has commands to look up cryptocurrencies, subscribe to live updates, create crypto price alerts for the user, and many more.
 
