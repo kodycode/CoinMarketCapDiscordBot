@@ -1,4 +1,5 @@
 {
+    "cmd_prefix": "",
     "token": "Enter your Discord token here",
     "alert_capacity": 10
 }

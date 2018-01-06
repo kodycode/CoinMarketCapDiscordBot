@@ -8,7 +8,7 @@ DISCORD_BOT_URL = "https://discordbots.org/api/bots/353373501274456065/stats"
 COG_MANAGER = "cogs.cog_manager"
 with open('config.json') as config:
     config_data = json.load(config)
-bot = commands.Bot(command_prefix="$",
+bot = commands.Bot(command_prefix=config_data["cmd_prefix"],
                    description="Displays market data from "
                                "https://coinmarketcap.com/")
 
@@ -35,8 +35,8 @@ class CoinMarketBot:
     async def on_ready():
         try:
             logger.info('Starting bot..')
+            print("Starting bot..")
             bot.load_extension(COG_MANAGER)
-            print('Bot is currently running on {} servers.'.format(len(bot.servers)))
             update_server_count(len(bot.servers))
         except Exception as e:
             error_msg = 'Failed to load cog manager\n{}: {}'.format(type(e).__name__, e)
@@ -48,8 +48,9 @@ class CoinMarketBot:
         if not message.author.bot:
             if message.content.startswith("<@" + str(bot.user.id) + ">"):
                 await bot.send_message(message.channel,
-                                       "The prefix for this bot is `$`. "
-                                       "Type `$help` for a list of commands.")
+                                       "The prefix for this bot is `{0}`. "
+                                       "Type `{0}help` for a list of commands."
+                                       "".format(config_data["cmd_prefix"]))
             else:
                 await bot.process_commands(message)
 
