@@ -39,8 +39,6 @@ class CoinMarketBot:
             logger.info('Starting bot..')
             for extension in initial_extensions:
                 bot.load_extension(extension)
-            print('CoinMarketDiscordBot is online.')
-            logger.info('Bot is online.')
             print('Bot is currently running on {} servers.'.format(len(bot.servers)))
             update_server_count(len(bot.servers))
         except Exception as e:

@@ -23,7 +23,7 @@ class AlertCommands:
         @param price - price for condition to compare
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
-        await self.cmd_function.add_alert(ctx, currency, operator, price, fiat)
+        await self.cmd_function.alert.add_alert(ctx, currency, operator, price, fiat)
 
     @commands.command(name='rema', pass_context=True)
     async def rema(self, ctx, alert_num: str):
@@ -36,7 +36,7 @@ class AlertCommands:
         @param ctx - context of the command sent
         @param alert_num - number of the specific alert to remove
         """
-        await self.cmd_function.remove_alert(ctx, alert_num)
+        await self.cmd_function.alert.remove_alert(ctx, alert_num)
 
     @commands.command(name='geta', pass_context=True)
     async def geta(self, ctx):
@@ -47,4 +47,4 @@ class AlertCommands:
 
         @param ctx - context of the command sent
         """
-        await self.cmd_function.get_alert_list(ctx)
+        await self.cmd_function.alert.get_alert_list(ctx)

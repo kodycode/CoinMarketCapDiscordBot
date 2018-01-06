@@ -17,7 +17,7 @@ class SubscriberCommands:
         @param ctx - context of the command sent
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
-        await self.cmd_function.add_subscriber(ctx, fiat)
+        await self.cmd_function.subscriber.add_subscriber(ctx, fiat)
 
     @commands.command(name='unsub', pass_context=True)
     async def unsubscribe(self, ctx):
@@ -28,7 +28,7 @@ class SubscriberCommands:
 
         @param ctx - context of the command sent
         """
-        await self.cmd_function.remove_subscriber(ctx)
+        await self.cmd_function.subscriber.remove_subscriber(ctx)
 
     @commands.command(name='getc', pass_context=True)
     async def getc(self, ctx):
@@ -39,7 +39,7 @@ class SubscriberCommands:
 
         @param ctx - context of the command sent
         """
-        await self.cmd_function.get_sub_currencies(ctx)
+        await self.cmd_function.subscriber.get_sub_currencies(ctx)
 
     @commands.command(name='addc', pass_context=True)
     async def addc(self, ctx, currency: str):
@@ -51,7 +51,7 @@ class SubscriberCommands:
         @param ctx - context of the command sent
         @param currency - the cryptocurrency to add
         """
-        await self.cmd_function.add_currency(ctx, currency)
+        await self.cmd_function.subscriber.add_currency(ctx, currency)
 
     @commands.command(name='remc', pass_context=True)
     async def remc(self, ctx, currency: str):
@@ -63,7 +63,7 @@ class SubscriberCommands:
         @param ctx - context of the command sent
         @param currency - the cryptocurrency to add
         """
-        await self.cmd_function.remove_currency(ctx, currency)
+        await self.cmd_function.subscriber.remove_currency(ctx, currency)
 
     @commands.command(name='purge', pass_context=True)
     async def purge(self, ctx):
@@ -74,4 +74,4 @@ class SubscriberCommands:
 
         @param ctx - context of the command sent
         """
-        await self.cmd_function.toggle_purge(ctx)
+        await self.cmd_function.subscriber.toggle_purge(ctx)

@@ -168,8 +168,6 @@ class CoinMarket:
             formatted_data += 'Percent Change (1H): **{}%**\n'.format(data['percent_change_1h'])
             formatted_data += 'Percent Change (24H): **{}%**\n'.format(data['percent_change_24h'])
             formatted_data += 'Percent Change (7D): **{}%**\n'.format(data['percent_change_7d'])
-            if single_search:
-                formatted_data += '\n'
             return formatted_data, isPositivePercent
         except Exception as e:
             raise CoinMarketException("Failed to format data: {}".format(e))

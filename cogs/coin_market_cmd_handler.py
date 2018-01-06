@@ -17,7 +17,7 @@ class CoinMarketCommands:
         @param currency - cryptocurrency to search for
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
-        await self.cmd_function.display_search(currency, fiat)
+        await self.cmd_function.cmc.display_search(currency, fiat)
 
     @commands.command(name='s', hidden=True)
     async def s(self, currency: str, fiat='USD'):
@@ -29,7 +29,7 @@ class CoinMarketCommands:
         @param currency - cryptocurrency to search for
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
-        await self.cmd_function.display_search(currency, fiat)
+        await self.cmd_function.cmc.display_search(currency, fiat)
 
     @commands.command(name='stats')
     async def stats(self, fiat='USD'):
@@ -40,7 +40,7 @@ class CoinMarketCommands:
 
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
-        await self.cmd_function.display_stats(fiat)
+        await self.cmd_function.cmc.display_stats(fiat)
 
     @commands.command(name='profit')
     async def profit(self, currency: str, currency_amt: float, cost: float, fiat='USD'):
@@ -54,10 +54,10 @@ class CoinMarketCommands:
         @param cost - the price of the cryptocurrency bought at the time
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
-        await self.cmd_function.calculate_profit(currency,
-                                                 currency_amt,
-                                                 cost,
-                                                 fiat)
+        await self.cmd_function.cmc.calculate_profit(currency,
+                                                     currency_amt,
+                                                     cost,
+                                                     fiat)
 
     @commands.command(name='p', hidden=True)
     async def p(self, currency: str, currency_amt: float, cost: float, fiat='USD'):
@@ -69,10 +69,10 @@ class CoinMarketCommands:
         @param cost - the price of the cryptocurrency bought at the time
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
-        await self.cmd_function.calculate_profit(currency,
-                                                 currency_amt,
-                                                 cost,
-                                                 fiat)
+        await self.cmd_function.cmc.calculate_profit(currency,
+                                                     currency_amt,
+                                                     cost,
+                                                     fiat)
 
     @commands.command(name='cb')
     async def cb(self, currency1: str, currency2: str, currency_amt: float):
@@ -86,9 +86,9 @@ class CoinMarketCommands:
         @param currency_amt - amount of currency1 to convert
                               to currency2
         """
-        await self.cmd_function.calculate_coin_to_coin(currency1,
-                                                       currency2,
-                                                       currency_amt)
+        await self.cmd_function.cmc.calculate_coin_to_coin(currency1,
+                                                           currency2,
+                                                           currency_amt)
 
     @commands.command(name='cc')
     async def cc(self, currency: str, currency_amt: float, fiat='USD'):
@@ -101,9 +101,9 @@ class CoinMarketCommands:
         @param currency_amt - amount of currency coins
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
-        await self.cmd_function.calculate_coin_to_fiat(currency,
-                                                       currency_amt,
-                                                       fiat)
+        await self.cmd_function.cmc.calculate_coin_to_fiat(currency,
+                                                           currency_amt,
+                                                           fiat)
 
     @commands.command(name='cf')
     async def cf(self, currency: str, price: float, fiat='USD'):
@@ -116,6 +116,6 @@ class CoinMarketCommands:
         @param price - price amount you wish to convert to coins
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
-        await self.cmd_function.calculate_fiat_to_coin(currency,
-                                                       price,
-                                                       fiat)
+        await self.cmd_function.cmc.calculate_fiat_to_coin(currency,
+                                                           price,
+                                                           fiat)
