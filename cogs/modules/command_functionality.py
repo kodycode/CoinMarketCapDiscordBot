@@ -174,7 +174,7 @@ class CommandFunctionality:
                 if isPositivePercent:
                     em = discord.Embed(title="Search results",
                                        description=data,
-                                       colour=0x009993)
+                                       colour=0x00FF00)
                 else:
                     em = discord.Embed(title="Search results",
                                        description=data,
@@ -450,7 +450,7 @@ class CommandFunctionality:
                                                            cost,
                                                            formatted_profit,
                                                            formatted_overall_investment))
-            color = 0xD14836 if profit < 0 else 0x009993
+            color = 0xD14836 if profit < 0 else 0x00FF00
             em = discord.Embed(title="Profit calculated ({})".format(currency),
                                description=msg,
                                colour=color)
