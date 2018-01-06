@@ -4,4 +4,6 @@ error.log
 .vimrc
 coinmarketcap_cache.sqlite
 alerts.json
+alerts_backup.json
 subscribers.json
+subscribers_backup.json
