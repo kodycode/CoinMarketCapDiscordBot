@@ -1,6 +1,7 @@
 from bot_logger import logger
 import discord
 import json
+import time
 
 
 class MiscFunctionality:
@@ -8,6 +9,7 @@ class MiscFunctionality:
 
     def __init__(self, bot):
         self.bot = bot
+        self.start_time = time.time()
 
     async def display_bot_profile(self):
         """
@@ -40,9 +42,18 @@ class MiscFunctionality:
         Displays information about the bot
         """
         try:
+            alert_count = 0
             username = await self.bot.get_user_info(str(133108920511234048))
             with open('subscribers.json') as subscribers:
                 subscriber_list = json.load(subscribers)
+            with open('alerts.json') as alerts:
+                alert_list = json.load(alerts)
+                for user in alert_list:
+                    alert_count += len(alert_list[user])
+            uptime = self.start_time - time.time()
+            uptime_msg = ("{} hours, {} minutes, {} seconds"
+                          "".format(uptime.hours, uptime.minutes,
+                                    uptime.seconds))
             em = discord.Embed(colour=0xFFFFFF)
             em.set_author(name=self.bot.user,
                           icon_url=self.bot.user.avatar_url)
@@ -55,9 +66,16 @@ class MiscFunctionality:
                          inline=False)
             em.add_field(name="Subscribers",
                          value=str(len(subscriber_list)),
-                         inline=False)
+                         inline=True)
+            em.add_field(name="Alerts",
+                         value=str(alert_count),
+                         inline=True)
+            em.add_field(name="Uptime",
+                         value=uptime_msg,
+                         inline=True)
             em.set_footer(text="Created with discord.py",
-                          icon_url="https://www.python.org/static/opengraph-icon-200x200.png")
+                          icon_url="https://www.python.org/static/"
+                                   "opengraph-icon-200x200.png")
             await self.bot.say(embed=em)
         except Exception as e:
             print("An error has occured. See error.log.")
