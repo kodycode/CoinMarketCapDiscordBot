@@ -1,7 +1,6 @@
 from bot_logger import logger
 import discord
 import json
-import time
 
 
 class MiscFunctionality:
@@ -9,7 +8,6 @@ class MiscFunctionality:
 
     def __init__(self, bot):
         self.bot = bot
-        self.start_time = time.time()
 
     async def display_bot_profile(self):
         """
@@ -42,21 +40,9 @@ class MiscFunctionality:
         Displays information about the bot
         """
         try:
-            alert_count = 0
-            channel_count = 0
-            member_count = 0
             username = await self.bot.get_user_info(str(133108920511234048))
             with open('subscribers.json') as subscribers:
                 subscriber_list = json.load(subscribers)
-            with open('alerts.json') as alerts:
-                alert_list = json.load(alerts)
-                for user in alert_list:
-                    alert_count += len(alert_list[user])
-            uptime = time.gmtime(time.time() - self.start_time)
-            uptime = time.strftime("%H hours, %M minutes, %S seconds", uptime)
-            for server in self.bot.servers:
-                channel_count += len(server.channels)
-                member_count += server.member_count
             em = discord.Embed(colour=0xFFFFFF)
             em.set_author(name=self.bot.user,
                           icon_url=self.bot.user.avatar_url)
@@ -67,30 +53,11 @@ class MiscFunctionality:
             em.add_field(name="Servers",
                          value=str(len(self.bot.servers)),
                          inline=False)
-            em.add_field(name="Channels",
-                         value=str(channel_count),
-                         inline=True)
-            em.add_field(name="Members",
-                         value=str(member_count),
-                         inline=True)
-            em.add_field(name="\u200b",
-                         value="\u200b",
-                         inline=True)
             em.add_field(name="Subscribers",
                          value=str(len(subscriber_list)),
-                         inline=True)
-            em.add_field(name="Alerts",
-                         value=str(alert_count),
-                         inline=True)
-            em.add_field(name="\u200b",
-                         value="\u200b",
-                         inline=True)
-            em.add_field(name="Uptime",
-                         value=uptime,
                          inline=False)
             em.set_footer(text="Created with discord.py",
-                          icon_url="https://www.python.org/static/"
-                                   "opengraph-icon-200x200.png")
+                          icon_url="https://www.python.org/static/opengraph-icon-200x200.png")
             await self.bot.say(embed=em)
         except Exception as e:
             print("An error has occured. See error.log.")
