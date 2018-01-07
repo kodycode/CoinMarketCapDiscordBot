@@ -73,17 +73,11 @@ class MiscFunctionality:
             em.add_field(name="Members",
                          value=str(member_count),
                          inline=True)
-            em.add_field(name="\u200b",
-                         value="\u200b",
-                         inline=True)
             em.add_field(name="Subscribers",
                          value=str(len(subscriber_list)),
                          inline=True)
             em.add_field(name="Alerts",
                          value=str(alert_count),
-                         inline=True)
-            em.add_field(name="\u200b",
-                         value="\u200b",
                          inline=True)
             em.add_field(name="Uptime",
                          value=uptime,
