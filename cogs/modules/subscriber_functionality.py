@@ -76,6 +76,24 @@ class SubscriberFunctionality:
             print("Failed to update game status. See error.log.")
             logger.error("Exception: {}".format(str(e)))
 
+    def _check_invalid_currencies(self, channel_settings):
+        """
+        Check if currencies have become invalid
+        If invalid, the currencies will be removed from the
+        subscriber currency list
+        """
+        remove_currencies = []
+        logger.warning("Trying to remove invalid currencies..")
+        for currency in channel_settings["currencies"]:
+            if self.market_list is not None:
+                if currency not in self.market_list:
+                    remove_currencies.append(currency)
+        for currency in remove_currencies:
+            channel_settings["currencies"].remove(currency)
+            logger.error("Removed '{}'".format(currency))
+        if remove_currencies:
+            self._save_subscriber_file(self.subscriber_data)
+
     async def display_live_data(self):
         """
         Obtains and displays live updates of coin stats in n-second intervals.
@@ -112,9 +130,9 @@ class SubscriberFunctionality:
                             except:
                                 pass
                         msg_count = 0
-        except CurrencyException as e:
-            logger.error("CurrencyException: {}".format(str(e)))
-            await self._say_error(e)
+        except CurrencyException:
+            logger.error("CurrencyException: Failed to clear invalid "
+                         "currencies.")
         except FiatException as e:
             logger.error("FiatException: {}".format(str(e)))
             await self.bot.say(e)
