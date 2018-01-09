@@ -100,8 +100,8 @@ class SubscriberFunctionality:
             if remove_currencies:
                 self._save_subscriber_file(self.subscriber_data)
         except Exception as e:
-            print("An error has occured. See error.log.")
-            logger.error("Failed to validate sub currencies: {}".format(str(e)))
+            raise CurrencyException("Failed to validate sub "
+                                    "currencies: {}".format(str(e)))
 
     async def display_live_data(self):
         """
@@ -140,9 +140,9 @@ class SubscriberFunctionality:
                             except:
                                 pass
                         msg_count = 0
-        except CurrencyException:
-            logger.error("CurrencyException: Failed to clear invalid "
-                         "currencies.")
+        except CurrencyException as e:
+            print("An error has occured. See error.log.")
+            logger.error("CurrencyException: {}".format(str(e)))
         except FiatException as e:
             logger.error("FiatException: {}".format(str(e)))
             await self.bot.say(e)
