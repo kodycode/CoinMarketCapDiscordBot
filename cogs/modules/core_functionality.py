@@ -20,6 +20,7 @@ class CoreFunctionality:
         with open('config.json') as config:
             self.config_data = json.load(config)
         self.bot = bot
+        self.started = False
         self.market_list = None
         self.market_stats = None
         self.acronym_list = None
@@ -40,14 +41,16 @@ class CoreFunctionality:
                             self.market_stats)
             self.alert.update(self.market_list, self.acronym_list)
             self.subscriber.update(self.market_list, self.acronym_list)
-            await self.subscriber.display_live_data()
             await self.alert.alert_user()
+            if self.started:
+                await self.subscriber.display_live_data()
         except Exception as e:
             print("Failed to update data. See error.log.")
             logger.error("Exception: {}".format(str(e)))
 
     async def _continuous_updates(self):
         await self._update_data()
+        self.started = True
         print('CoinMarketDiscordBot is online.')
         logger.info('Bot is online.')
         while True:

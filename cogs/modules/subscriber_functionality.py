@@ -174,6 +174,7 @@ class SubscriberFunctionality:
             if channel not in subscriber_list:
                 subscriber_list[channel] = {}
                 channel_settings = subscriber_list[channel]
+                channel_settings["interval"] = 5
                 channel_settings["purge"] = False
                 channel_settings["fiat"] = ucase_fiat
                 channel_settings["currencies"] = []
@@ -321,10 +322,11 @@ class SubscriberFunctionality:
                 if currency in channel_settings["currencies"]:
                     channel_settings["currencies"].remove(currency)
                     self._save_subscriber_file(self.subscriber_data)
-                    await self.bot.say("``{}`` was successfully removed.".format(currency.title()))
-                    return
+                    await self.bot.say("``{}`` was successfully removed."
+                                       "".format(currency.title()))
                 else:
-                    await self.bot.say("``{}`` was never added or is invalid.".format(currency.title()))
+                    await self.bot.say("``{}`` was never added or is invalid."
+                                       "".format(currency.title()))
             else:
                 await self.bot.say("The channel needs to be subscribed first.")
         except Forbidden:
@@ -334,4 +336,30 @@ class SubscriberFunctionality:
             await self._say_error(e)
         except Exception as e:
             print("An error has occured. See error.log.")
+            logger.error("Exception: {}".format(str(e)))
+
+    async def set_live_update_interval(self, ctx, minutes=5):
+        """
+        Sets the interval at which the bot should post updates
+        to the channel. By default, it will be every 5 minutes.
+
+        @param ctx - context of the command sent
+        @param minutes - interval in minutes to send an update
+                         (only accepts multiples of 5)
+        """
+        try:
+            if minutes == 0:
+                await self.bot.say("0 is not a valid input.")
+                return
+            channel = str(ctx.message.channel.id)
+            if channel in self.subscriber_data:
+                if minutes % 5 == 0:
+                    self.subscriber_data[channel]["interval"] = minutes
+                    self._save_subscriber_file(self.subscriber_data)
+                else:
+                    await self.bot.say("Minutes entered is not a multiple of 5.")
+            else:
+                await self.bot.say("Channel must be subscribed first.")
+        except Exception as e:
+            print("Unable to set live update interval. See error.log.")
             logger.error("Exception: {}".format(str(e)))
