@@ -135,7 +135,7 @@ class AlertFunctionality:
             except Exception:
                 await self.bot.say("Invalid operator: **{}**".format(operator))
                 return
-            user_id = str(ctx.message.author.id)
+            user_id = ctx.message.author.id
             if user_id not in self.alert_data:
                 self.alert_data[user_id] = {}
             while i <= len(self.alert_data[user_id]) + 1:
@@ -197,7 +197,7 @@ class AlertFunctionality:
         @param alert_num - number of the specific alert to remove
         """
         try:
-            user_id = str(ctx.message.author.id)
+            user_id = ctx.message.author.id
             user_list = self.alert_data
             alert_list = user_list[user_id]
             if alert_num in alert_list:

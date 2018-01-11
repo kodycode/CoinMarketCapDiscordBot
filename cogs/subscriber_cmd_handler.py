@@ -93,3 +93,10 @@ class SubscriberCommands:
         """
         await self.cmd_function.subscriber.set_live_update_interval(ctx,
                                                                     rate)
+
+    @commands.command(name='subset', pass_context=True)
+    async def substats(self, ctx):
+        """
+        Gets subscriber settings
+        """
+        await self.cmd_function.subscriber.get_subset(ctx)

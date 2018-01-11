@@ -192,7 +192,7 @@ class SubscriberFunctionality:
         """
         try:
             ucase_fiat = self.coin_market.fiat_check(fiat)
-            channel = str(ctx.message.channel.id)
+            channel = ctx.message.channel.id
             subscriber_list = self.subscriber_data
             try:
                 self.bot.get_channel(channel).server  # validate channel
@@ -272,7 +272,7 @@ class SubscriberFunctionality:
         @param ctx - context of the command sent
         """
         try:
-            channel = str(ctx.message.channel.id)
+            channel = ctx.message.channel.id
             subscriber_list = self.subscriber_data
             if channel in subscriber_list:
                 channel_settings = subscriber_list[channel]
@@ -382,21 +382,59 @@ class SubscriberFunctionality:
                 await self.bot.say("The rate entered is not supported. "
                                    "Current intervals you can choose are:\n"
                                    "**default** - every 5 minutes\n"
-                                   "**half** - half an hour\n"
-                                   "**hourly** - hourly\n")
+                                   "**half** - every 30 minute mark\n"
+                                   "**hourly** - every hour mark\n")
                 return
-            channel = str(ctx.message.channel.id)
+            channel = ctx.message.channel.id
             if channel in self.subscriber_data:
                 if rate == "hourly":
-                    self.subscriber_data[channel]["interval"] = "0"
+                    self.subscriber_data[channel]["interval"] = "60"
                 elif rate == "half":
                     self.subscriber_data[channel]["interval"] = "30"
                 else:
                     self.subscriber_data[channel]["interval"] = "5"
                 self._save_subscriber_file(self.subscriber_data)
-                await self.bot.say("Interval is set to {}".format(rate))
+                await self.bot.say("Interval is set to **{}**".format(rate))
             else:
                 await self.bot.say("Channel must be subscribed first.")
         except Exception as e:
             print("Unable to set live update interval. See error.log.")
             logger.error("Exception: {}".format(str(e)))
+
+    async def get_subset(self, ctx):
+        """
+        Gets the substats of the subscribed channel and displays
+        the interval of the bot, purge mode, and the number of
+        currencies
+
+        @param ctx - context of the command sent
+        """
+        try:
+            error = False
+            channel = ctx.message.channel.id
+            interval = self.subscriber_data[channel]["interval"]
+        except KeyError:
+            interval = "5"
+            pass
+        except Exception as e:
+            error = True
+            print("Unable to get substats. See error.log.")
+            logger.error("Exception: {}".format(str(e)))
+        finally:
+            if error:
+                await self.bot.say("Error has occurred. Please try again "
+                                   "later.")
+                return
+            purge_mode = self.subscriber_data[channel]["purge"]
+            num_currencies = len(self.subscriber_data[channel]["currencies"])
+            msg = ("Update interval: Every **{}** minutes\n"
+                   "Purge Mode: **{}**\n"
+                   "Number of currencies subscribed to: **{}**\n"
+                   "To see what currencies are subscribed, type "
+                   "`$getc`".format(interval,
+                                    purge_mode,
+                                    num_currencies))
+            em = discord.Embed(title="Subscriber settings",
+                               description=msg,
+                               colour=0xFFD700)
+            await self.bot.say(embed=em)
