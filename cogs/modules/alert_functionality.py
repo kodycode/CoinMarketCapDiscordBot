@@ -60,35 +60,45 @@ class AlertFunctionality:
         else:
             raise Exception("Unable to translate operation.")
 
-    def _check_alert(self, currency, operator, price, fiat):
+    def _check_alert(self, currency, operator, user_value, fiat, kwargs=None):
         """
         Checks if the alert condition isn't true
 
         @param currency - cryptocurrency to set an alert of
         @param operator - operator condition to notify the channel
-        @param price - price for condition to compare
+        @param user_value - price or percent for condition to compare
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         @return - True if condition doesn't exist, False if it does
         """
         if self.market_list is None:
             return True
         if currency in self.market_list:
-            market_price = float(self.market_list[currency]["price_usd"])
-            market_price = float(self.coin_market.format_price(market_price,
-                                                               fiat,
-                                                               False))
+            if kwargs:
+                if "hour" in kwargs:
+                    market_value = float(self.market_list[currency]["percent_change_1h"])
+                elif "day" in kwargs:
+                    market_value = float(self.market_list[currency]["percent_change_24h"])
+                elif "week" in kwargs:
+                    market_value = float(self.market_list[currency]["percent_change_7d"])
+                else:
+                    raise Exception("Unsupported percent change format.")
+            else:
+                market_value = float(self.market_list[currency]["price_usd"])
+                market_value = float(self.coin_market.format_price(market_value,
+                                                                   fiat,
+                                                                   False))
             if operator in self.supported_operators:
                 if operator == "<":
-                    if market_price < float(price):
+                    if market_value < float(user_value):
                         return False
                 elif operator == "<=":
-                    if market_price <= float(price):
+                    if market_value <= float(user_value):
                         return False
                 elif operator == ">":
-                    if market_price > float(price):
+                    if market_value > float(user_value):
                         return False
                 elif operator == ">=":
-                    if market_price >= float(price):
+                    if market_value >= float(user_value):
                         return False
                 return True
             else:
@@ -118,17 +128,16 @@ class AlertFunctionality:
         except:
             pass
 
-    async def add_alert(self, ctx, currency, operator, price, fiat):
+    async def add_alert(self, ctx, currency, operator, user_value, fiat, **kwargs):
         """
         Adds an alert to alerts.json
 
         @param currency - cryptocurrency to set an alert of
         @param operator - operator condition to notify the channel
-        @param price - price for condition to compare
+        @param user_value - price or percent for condition to compare
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
         try:
-            i = 1
             alert_num = None
             ucase_fiat = self.coin_market.fiat_check(fiat)
             if currency.upper() in self.acronym_list:
@@ -139,12 +148,10 @@ class AlertFunctionality:
             if currency not in self.market_list:
                 raise CurrencyException("Currency is invalid: ``{}``".format(currency))
             try:
-                if '%' in price:
-                else:
-                    if not self._check_alert(currency, operator, price, ucase_fiat):
-                        await self._say_msg("Failed to create alert. Current price "
-                                            "of **{}** already meets the condition."
-                                            "".format(currency.title()))
+                if not self._check_alert(currency, operator, user_value, ucase_fiat, kwargs):
+                    await self._say_msg("Failed to create alert. Current price "
+                                        "of **{}** already meets the condition."
+                                        "".format(currency.title()))
                     return
             except Exception:
                 await self._say_msg("Invalid operator: **{}**".format(operator))
@@ -152,10 +159,9 @@ class AlertFunctionality:
             user_id = ctx.message.author.id
             if user_id not in self.alert_data:
                 self.alert_data[user_id] = {}
-            while i <= len(self.alert_data[user_id]) + 1:
+            for i in range(1, len(self.alert_data[user_id]) + 2):
                 if str(i) not in self.alert_data[user_id]:
                     alert_num = str(i)
-                i += 1
             if alert_num is None:
                 raise Exception("Something went wrong with adding alert.")
             alert_cap = int(self.alert_capacity)
@@ -174,9 +180,14 @@ class AlertFunctionality:
                                     "*, **<=**, **>**, or **>=**"
                                     "".format(operator))
                 return
-            channel_alert["price"] = ("{:.6f}".format(price)).rstrip('0')
-            if channel_alert["price"].endswith('.'):
-                channel_alert["price"] = channel_alert["price"].replace('.', '')
+            if kwargs:
+                channel_alert["percent"] = ("{}".format(user_value)).rstrip('0')
+                for arg in kwargs:
+                    channel_alert["percent_change"] = arg
+            else:
+                channel_alert["price"] = ("{:.6f}".format(user_value)).rstrip('0')
+                if channel_alert["price"].endswith('.'):
+                    channel_alert["price"] = channel_alert["price"].replace('.', '')
             channel_alert["fiat"] = ucase_fiat
             self._save_alert_file(self.alert_data)
             await self._say_msg("Alert has been set.")
@@ -219,7 +230,13 @@ class AlertFunctionality:
                 alert_setting = alert_list[alert_num]
                 alert_currency = alert_setting["currency"]
                 alert_operation = self._translate_operation(alert_setting["operation"])
-                alert_price = alert_setting["price"]
+                if "percent" in alert_setting:
+                    alert_percent = alert_setting["percent"]
+                    if alert_percent.endswith('.'):
+                        alert_percent = alert_percent.replace('.', '')
+                    alert_value = "{}%".format(alert_percent)
+                else:
+                    alert_value = alert_setting["price"]
                 alert_fiat = alert_setting["fiat"]
                 alert_list.pop(str(alert_num))
                 self._save_alert_file(self.alert_data)
@@ -228,7 +245,7 @@ class AlertFunctionality:
                                     "removed.".format(removed_alert,
                                                       alert_currency,
                                                       alert_operation,
-                                                      alert_price,
+                                                      alert_value,
                                                       alert_fiat))
             else:
                 await self._say_msg("The number you've entered does not exist "
@@ -260,12 +277,29 @@ class AlertFunctionality:
                     for alert in alert_list:
                         currency = alert_list[alert]["currency"].title()
                         operation = self._translate_operation(alert_list[alert]["operation"])
-                        msg[int(alert)] = ("[**{}**] Alert when **{}** is **{}** **{}** "
-                                           "in **{}**\n".format(alert,
-                                                                currency,
-                                                                operation,
-                                                                alert_list[alert]["price"],
-                                                                alert_list[alert]["fiat"]))
+                        if "percent" in alert_list[alert]:
+                            alert_percent = alert_list[alert]["percent"]
+                            if alert_percent.endswith('.'):
+                                alert_percent = alert_percent.replace('.', '')
+                            alert_value = "{}%".format(alert_percent)
+                        else:
+                            alert_value = alert_list[alert]["price"]
+                        msg[int(alert)] = ("[**{}**] Alert when **{}** is "
+                                           "**{}** **{}** "
+                                           "".format(alert,
+                                                     currency,
+                                                     operation,
+                                                     alert_value))
+                        if "percent_change" in alert_list[alert]:
+                            if "hour" == alert_list[alert]["percent_change"]:
+                                msg[int(alert)] += "(**1h**)\n"
+                            elif "day" == alert_list[alert]["percent_change"]:
+                                msg[int(alert)] += "(**24h**)\n"
+                            elif "week" == alert_list[alert]["percent_change"]:
+                                msg[int(alert)] += "(**7d**)\n"
+                        else:
+                            msg[int(alert)] += ("in **{}**\n"
+                                                "".format(alert_list[alert]["fiat"]))
                     for line in sorted(msg):
                         result_msg += msg[line]
                     color = 0x00FF00
@@ -294,25 +328,42 @@ class AlertFunctionality:
         cryptocurrency price
         """
         try:
+            percent_change = {}
             raised_alerts = defaultdict(list)
             for user in self.alert_data:
                 alert_list = self.alert_data[str(user)]
                 for alert in alert_list:
                     alert_currency = alert_list[alert]["currency"]
                     operator_symbol = alert_list[alert]["operation"]
-                    alert_price = alert_list[alert]["price"]
+                    if "percent" in alert_list[alert]:
+                        alert_value = alert_list[alert]["percent"]
+                        if alert_value.endswith('.'):
+                            alert_value = alert_value.replace('.', '')
+                    else:
+                        alert_value = alert_list[alert]["price"]
                     alert_fiat = alert_list[alert]["fiat"]
+                    if "percent_change" in alert_list[alert]:
+                        percent_change[alert_list[alert]["percent_change"]] = True
                     if not self._check_alert(alert_currency, operator_symbol,
-                                             alert_price, alert_fiat):
+                                             alert_value, alert_fiat,
+                                             percent_change):
                         alert_operator = self._translate_operation(operator_symbol)
                         raised_alerts[user].append(alert)
                         user_obj = await self.bot.get_user_info(user)
                         if alert_currency in self.market_list:
-                            msg = ("**{}** is **{}** **{}** "
-                                   "**{}**".format(alert_currency.title(),
-                                                   alert_operator,
-                                                   alert_price,
-                                                   alert_fiat))
+                            msg = ("**{}** is **{}** **{}%** "
+                                   "".format(alert_currency.title(),
+                                             alert_operator,
+                                             alert_value))
+                            if "percent_change" in alert_list[alert]:
+                                if "hour" == alert_list[alert]["percent_change"]:
+                                    msg += "(**1h**)\n"
+                                elif "day" == alert_list[alert]["percent_change"]:
+                                    msg += "(**24h**)\n"
+                                elif "week" == alert_list[alert]["percent_change"]:
+                                    msg += "(**7d**)\n"
+                            else:
+                                msg += "**{}**".format(alert_fiat)
                         else:
                             msg = ("**{}** is no longer a valid currency "
                                    "according to the coinmarketapi api. Alerts "
