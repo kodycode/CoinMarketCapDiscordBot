@@ -25,6 +25,60 @@ class AlertCommands:
         """
         await self.cmd_function.alert.add_alert(ctx, currency, operator, price, fiat)
 
+    @commands.command(name='adda1h', pass_context=True)
+    async def addahour(self, ctx, currency: str, operator: str, percent: str, fiat='USD'):
+        """
+        Adds an alert notification for the user when a price meets the condition specified
+        An example for this command would be:
+        "$adda1h bitcoin 2.5%"
+
+        @param currency - cryptocurrency to set an alert of
+        @param operator - operator for the given choices
+                          <  - less than
+                          <= - less than or equal to
+                          >  - greater than
+                          >= - greater than or equal to
+        @param price - percent of 1h change to compare
+        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
+        """
+        await self.cmd_function.alert.add_alert(ctx, currency, operator, percent, fiat)
+
+    @commands.command(name='adda24h', pass_context=True)
+    async def addaday(self, ctx, currency: str, operator: str, percent: str, fiat='USD'):
+        """
+        Adds an alert notification for the user when a price meets the condition specified
+        An example for this command would be:
+        "$adda bitcoin <= 15000"
+
+        @param currency - cryptocurrency to set an alert of
+        @param operator - operator for the given choices
+                          <  - less than
+                          <= - less than or equal to
+                          >  - greater than
+                          >= - greater than or equal to
+        @param price - percent of 1h change to compare
+        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
+        """
+        await self.cmd_function.alert.add_alert(ctx, currency, operator, percent, fiat)
+
+    @commands.command(name='addaw', pass_context=True)
+    async def addaweek(self, ctx, currency: str, operator: str, percent: str, fiat='USD'):
+        """
+        Adds an alert notification for the user when a price meets the condition specified
+        An example for this command would be:
+        "$adda bitcoin <= 15000"
+
+        @param currency - cryptocurrency to set an alert of
+        @param operator - operator for the given choices
+                          <  - less than
+                          <= - less than or equal to
+                          >  - greater than
+                          >= - greater than or equal to
+        @param price - percent of 1h change to compare
+        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
+        """
+        await self.cmd_function.alert.add_alert(ctx, currency, operator, percent, fiat)
+
     @commands.command(name='rema', pass_context=True)
     async def rema(self, ctx, alert_num: str):
         """

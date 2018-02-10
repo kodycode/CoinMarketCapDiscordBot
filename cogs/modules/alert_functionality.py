@@ -139,10 +139,12 @@ class AlertFunctionality:
             if currency not in self.market_list:
                 raise CurrencyException("Currency is invalid: ``{}``".format(currency))
             try:
-                if not self._check_alert(currency, operator, price, ucase_fiat):
-                    await self._say_msg("Failed to create alert. Current price "
-                                        "of **{}** already meets the condition."
-                                        "".format(currency.title()))
+                if '%' in price:
+                else:
+                    if not self._check_alert(currency, operator, price, ucase_fiat):
+                        await self._say_msg("Failed to create alert. Current price "
+                                            "of **{}** already meets the condition."
+                                            "".format(currency.title()))
                     return
             except Exception:
                 await self._say_msg("Invalid operator: **{}**".format(operator))
