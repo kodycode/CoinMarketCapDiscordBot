@@ -22,6 +22,17 @@ class MiscFunctionality:
             print("An error has occured. See error.log.")
             logger.error("Exception: {}".format(str(e)))
 
+    async def display_update_page(self):
+        """
+        Links the update page URL
+        """
+        try:
+            msg = "https://github.com/kodycode/CoinMarketDiscordBot/wiki/Updates"
+            await self.bot.say(msg)
+        except Exception as e:
+            print("An error has occured. See error.log.")
+            logger.error("Exception: {}".format(str(e)))
+
     async def display_donation_option(self):
         """
         Displays donation message

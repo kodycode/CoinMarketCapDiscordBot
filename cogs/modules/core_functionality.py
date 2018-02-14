@@ -5,6 +5,7 @@ from cogs.modules.coin_market import CoinMarket
 from cogs.modules.subscriber_functionality import SubscriberFunctionality
 import asyncio
 import datetime
+import discord
 import json
 import re
 
@@ -43,11 +44,22 @@ class CoreFunctionality:
                             self.market_stats)
             self.alert.update(self.market_list, self.acronym_list)
             self.subscriber.update(self.market_list, self.acronym_list)
-            await self.subscriber.update_game_status()
+            await self.update_game_status()
             await self.alert.alert_user()
             await self.subscriber.display_live_data(minute)
         except Exception as e:
             print("Failed to update data. See error.log.")
+            logger.error("Exception: {}".format(str(e)))
+
+    async def update_game_status(self):
+        """
+        Updates the game status of the bot
+        """
+        try:
+            game_status = discord.Game(name="$updates to see log")
+            await self.bot.change_presence(game=game_status)
+        except Exception as e:
+            print("Failed to update game status. See error.log.")
             logger.error("Exception: {}".format(str(e)))
 
     async def _continuous_updates(self):

@@ -16,6 +16,15 @@ class MiscCommands:
         """
         await self.cmd_function.display_bot_profile()
 
+    @commands.command(name="updates")
+    async def updates(self):
+        """
+        Shows update log of the bot
+        An example for this command would be:
+        "$updates"
+        """
+        await self.cmd_function.display_update_page()
+
     @commands.command(name="donate")
     async def donate(self):
         """

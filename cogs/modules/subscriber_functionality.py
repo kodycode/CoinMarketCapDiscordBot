@@ -79,19 +79,6 @@ class SubscriberFunctionality:
         except:
             pass
 
-    async def update_game_status(self):
-        """
-        Updates the game status of the bot
-        """
-        try:
-            num_channels = len(self.subscriber_data)
-            game_status = discord.Game(name="with {} subscriber(s)"
-                                            "".format(num_channels))
-            await self.bot.change_presence(game=game_status)
-        except Exception as e:
-            print("Failed to update game status. See error.log.")
-            logger.error("Exception: {}".format(str(e)))
-
     def _check_invalid_sub_currencies(self):
         """
         Check if currencies have become invalid
@@ -238,7 +225,6 @@ class SubscriberFunctionality:
                 channel_settings["fiat"] = ucase_fiat
                 channel_settings["currencies"] = []
                 self._save_subscriber_file(self.subscriber_data)
-                await self.update_game_status()
                 await self._say_msg("Channel has succcesfully subscribed. Now "
                                     "add some currencies with `$addc` to begin "
                                     "receiving updates.")
@@ -260,7 +246,6 @@ class SubscriberFunctionality:
             if channel in subscriber_list:
                 subscriber_list.pop(channel)
                 self._save_subscriber_file(self.subscriber_data)
-                await self.update_game_status()
                 await self._say_msg("Channel has unsubscribed.")
             else:
                 await self._say_msg("Channel was never subscribed.")
