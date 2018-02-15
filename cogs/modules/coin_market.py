@@ -20,6 +20,7 @@ fiat_suffix = [
     'SEK'
 ]
 
+ETHEREUM = "ethereum"
 SMALL_GREEN_TRIANGLE = "<:small_green_triangle:396586561413578752>"
 SMALL_RED_TRIANGLE = ":small_red_triangle_down:"
 
@@ -151,6 +152,7 @@ class CoinMarket:
             formatted_btc = '{:,.8f}'.format(float(data['price_btc'])).rstrip('0')
             if formatted_btc.endswith('.'):
                 formatted_btc = formatted_btc.replace('.', '')
+            eth_price = eth_price.rstrip('.')
             if single_search:
                 eth_price += '\n'
             if data['market_cap_usd'] is None:
@@ -234,7 +236,7 @@ class CoinMarket:
         except Exception as e:
             raise CoinMarketException(e)
 
-    def get_current_currency(self, market_list, acronym_list, currency, eth_price, fiat):
+    def get_current_currency(self, market_list, acronym_list, currency, fiat):
         """
         Obtains the data of the specified currency and returns them using
         the current updated market list
@@ -255,6 +257,7 @@ class CoinMarket:
             if currency not in market_list:
                 raise CurrencyException("Invalid currency: `{}`".format(currency))
             data = market_list[currency]
+            eth_price = self.get_converted_coin_amt(market_list, currency, ETHEREUM, 1)
             formatted_data, isPositivePercent = self._format_currency_data(data, eth_price, fiat)
             return formatted_data, isPositivePercent
         except CurrencyException as e:
@@ -380,23 +383,43 @@ class CoinMarket:
         except Exception as e:
             raise CoinMarketException(e)
 
-    def get_current_multiple_currency(self, data_list, cached_data, eth_prices, fiat):
+    def get_current_multiple_currency(self, market_list, acronym_list, cached_data, currency_list, fiat):
         """
         Returns updated info of multiple coin stats using the current
         updated market list
-
+        @param market_list - list of entire crypto market
+        @param acronym_list - list of cryptocurrency acronyms
         @param cached_data - a cache of formatted cryptocurrency data
+        @param currency_list - list of cryptocurrencies to retrieve
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         @return - list of formatted cryptocurrency data
         """
         try:
             formatted_data = []
+            data_list = []
             result_msg = ''
+            for currency in currency_list:
+                try:
+                    if acronym_list is not None:
+                        if currency.upper() in acronym_list:
+                            currency = acronym_list[currency.upper()]
+                            if "Duplicate" in currency:
+                                return currency
+                        data_list.append(market_list[currency])
+                    else:
+                        data_list.append(market_list[currency])
+                except:
+                    raise CurrencyException("Invalid currency: `{}`"
+                                            "".format(currency))
+            data_list.sort(key=lambda x: int(x['rank']))
             for data in data_list:
                 if fiat not in cached_data:
                     cached_data[fiat] = {}
                 if data['name'] not in cached_data[fiat]:
-                    eth_price = eth_prices[currency]
+                    eth_price = self.get_converted_coin_amt(market_list,
+                                                            currency,
+                                                            ETHEREUM,
+                                                            1)
                     formatted_msg = self._format_currency_data(data,
                                                                eth_price,
                                                                fiat,
@@ -417,3 +440,18 @@ class CoinMarket:
             raise
         except Exception as e:
             raise CoinMarketException(e)
+
+    def get_converted_coin_amt(self, market_list, currency1, currency2, currency_amt):
+        """
+        Converts coin to coin based on btc price
+        """
+        try:
+            price_btc1 = float(market_list[currency1]['price_btc'])
+            price_btc2 = float(market_list[currency2]['price_btc'])
+            btc_amt = float("{:.8f}".format(currency_amt * price_btc1))
+            converted_amt = "{:.8f}".format(btc_amt/price_btc2).rstrip('0')
+            currency_amt = "{:.8f}".format(currency_amt).rstrip('0')
+            return converted_amt
+        except Exception as e:
+            print("Failed to convert coin. See error.log.")
+            logger.error("Exception: {}".format(str(e)))

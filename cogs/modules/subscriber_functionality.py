@@ -5,8 +5,8 @@ from discord.errors import Forbidden
 import discord
 import json
 
-
 ETHEREUM = "ethereum"
+
 
 class SubscriberFunctionality:
     """Handles Subscriber command Functionality"""
@@ -106,82 +106,12 @@ class SubscriberFunctionality:
             raise CurrencyException("Failed to validate sub "
                                     "currencies: {}".format(str(e)))
 
-    async def calculate_eth_price(self, currency):
-        """
-        Calculates ethereum price of a coin
-
-        @param currency - currency to convert from
-        @param currency_amt - amount of currency coins
-        """
-        try:
-            return await self.calculate_coin_to_coin(currency,
-                                                     ETHEREUM,
-                                                     1,
-                                                     False)
-        except Exception as e:
-            print("An error has occured in getting eth price. See error.log.")
-            logger.error("Exception: {}".format(str(e)))
-
-    async def calculate_coin_to_coin(self, currency1, currency2, currency_amt, post=True):
-        """
-        Calculates cryptocoin to another cryptocoin and displays it
-
-        @param currency1 - currency to convert from
-        @param currency2 - currency to convert to
-        @param currency_amt - amount of currency coins
-        """
-        try:
-            acronym1 = ''
-            acronym2 = ''
-            if currency1.upper() in self.acronym_list:
-                acronym1 = currency1.upper()
-                currency1 = self.acronym_list[currency1.upper()]
-            else:
-                acronym1 = self.market_list[currency1]["symbol"]
-            if currency2.upper() in self.acronym_list:
-                acronym2 = currency2.upper()
-                currency2 = self.acronym_list[currency2.upper()]
-            else:
-                acronym2 = self.market_list[currency2]["symbol"]
-            price_btc1 = float(self.market_list[currency1]['price_btc'])
-            price_btc2 = float(self.market_list[currency2]['price_btc'])
-            btc_amt = float("{:.8f}".format(currency_amt * price_btc1))
-            converted_amt = "{:.8f}".format(btc_amt/price_btc2).rstrip('0')
-            currency_amt = "{:.8f}".format(currency_amt).rstrip('0')
-            if currency_amt.endswith('.'):
-                currency_amt = currency_amt.replace('.', '')
-            if post:
-                result = ("**{} {}** converts to **{} {}**"
-                          "".format(currency_amt,
-                                    currency1.title(),
-                                    converted_amt,
-                                    currency2.title()))
-                em = discord.Embed(title=("{}({}) to {}({})"
-                                          "".format(currency1.title(),
-                                                    acronym1,
-                                                    currency2.title(),
-                                                    acronym2)),
-                                   description=result,
-                                   colour=0xFF9900)
-            else:
-                return currency1, converted_amt
-            await self.bot.say(embed=em)
-        except Forbidden:
-            pass
-        except Exception as e:
-            await self.bot.say("Command failed. Make sure the arguments are valid.")
-            print("An error has occured. See error.log.")
-            logger.error("Exception: {}".format(str(e)))
-
     async def _get_live_data(self, channel, channel_settings, minute):
         """
         Obtains and returns the data of currencies requested
         """
         try:
-            data_list = []
-            eth_prices = {}
             valid_time = True
-            currency_list = channel_settings["currencies"]
             if int(minute) != int(channel_settings["interval"]):
                 if int(minute) % int(channel_settings["interval"]) != 0:
                     valid_time = False
@@ -194,21 +124,17 @@ class SubscriberFunctionality:
         finally:
             if not valid_time:
                 return None
-            if currency_list:
+            if channel_settings["currencies"]:
                 if channel_settings["purge"]:
                     try:
                         await self.bot.purge_from(channel,
                                                   limit=10)
                     except:
                         pass
-                for currency in currency_list:
-                    data_list.append(self.market_list[currency])
-                    currency, eth_price = await self.calculate_eth_price(currency)
-                    eth_prices[currency] = eth_price
-                data_list.sort(key=lambda x: int(x['rank']))
-                return self.coin_market.get_current_multiple_currency(data_list,
+                return self.coin_market.get_current_multiple_currency(self.market_list,
+                                                                      None,
                                                                       self.cache_data,
-                                                                      eth_prices,
+                                                                      channel_settings["currencies"],
                                                                       channel_settings["fiat"])
 
     async def display_live_data(self, minute):
