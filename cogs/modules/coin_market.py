@@ -383,7 +383,7 @@ class CoinMarket:
         except Exception as e:
             raise CoinMarketException(e)
 
-    def get_current_multiple_currency(self, market_list, acronym_list, cached_data, currency_list, fiat):
+    def get_current_multiple_currency(self, market_list, acronym_list, currency_list, fiat, cached_data=None):
         """
         Returns updated info of multiple coin stats using the current
         updated market list
@@ -413,20 +413,26 @@ class CoinMarket:
                                             "".format(currency))
             data_list.sort(key=lambda x: int(x['rank']))
             for data in data_list:
-                if fiat not in cached_data:
-                    cached_data[fiat] = {}
-                if data['name'] not in cached_data[fiat]:
-                    eth_price = self.get_converted_coin_amt(market_list,
-                                                            currency,
-                                                            ETHEREUM,
-                                                            1)
+                eth_price = self.get_converted_coin_amt(market_list,
+                                                        currency,
+                                                        ETHEREUM,
+                                                        1)
+                if cached_data:
+                    if fiat not in cached_data:
+                        cached_data[fiat] = {}
+                    if data['name'] not in cached_data[fiat]:
+                        formatted_msg = self._format_currency_data(data,
+                                                                   eth_price,
+                                                                   fiat,
+                                                                   False)[0]
+                        cached_data[fiat][data['name']] = formatted_msg
+                    else:
+                        formatted_msg = cached_data[fiat][data['name']]
+                else:
                     formatted_msg = self._format_currency_data(data,
                                                                eth_price,
                                                                fiat,
                                                                False)[0]
-                    cached_data[fiat][data['name']] = formatted_msg
-                else:
-                    formatted_msg = cached_data[fiat][data['name']]
                 if len(result_msg + formatted_msg) < 2000:
                     result_msg += "{}\n".format(formatted_msg)
                 else:

@@ -50,7 +50,6 @@ class CoinMarketFunctionality:
                 data = self.coin_market.get_current_multiple_currency(self.market_list,
                                                                       self.acronym_list,
                                                                       currency_list,
-                                                                      0,
                                                                       fiat.upper())
                 for msg in data:
                     if msg_count == 0:
