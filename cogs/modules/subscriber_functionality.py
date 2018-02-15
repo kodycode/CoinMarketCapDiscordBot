@@ -5,8 +5,6 @@ from discord.errors import Forbidden
 import discord
 import json
 
-ETHEREUM = "ethereum"
-
 
 class SubscriberFunctionality:
     """Handles Subscriber command Functionality"""
