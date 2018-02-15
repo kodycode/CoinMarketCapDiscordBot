@@ -46,8 +46,7 @@ class CoreFunctionality:
             self.subscriber.update(self.market_list, self.acronym_list)
             await self.update_game_status()
             await self.alert.alert_user()
-            if self.started:
-                await self.subscriber.display_live_data(minute)
+            await self.subscriber.display_live_data(minute)
         except Exception as e:
             print("Failed to update data. See error.log.")
             logger.error("Exception: {}".format(str(e)))

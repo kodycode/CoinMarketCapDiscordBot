@@ -4,6 +4,8 @@ from discord.errors import Forbidden
 import discord
 
 
+ETHEREUM = "ethereum"
+
 class CoinMarketFunctionality:
     """Handles CMC command functionality"""
 
@@ -42,6 +44,7 @@ class CoinMarketFunctionality:
         """
         try:
             msg_count = 0
+            eth_prices = {}
             if ',' in currency:
                 if ' ' in currency:
                     await self.bot.say("Don't include spaces in multi-coin search.")
@@ -50,6 +53,7 @@ class CoinMarketFunctionality:
                 data = self.coin_market.get_current_multiple_currency(self.market_list,
                                                                       self.acronym_list,
                                                                       currency_list,
+                                                                      0,
                                                                       fiat.upper())
                 for msg in data:
                     if msg_count == 0:
@@ -62,9 +66,11 @@ class CoinMarketFunctionality:
                                            colour=0xFF9900)
                     await self.bot.say(embed=em)
             else:
+                currency1, eth_price = await self.calculate_eth_price(currency)
                 data, isPositivePercent = self.coin_market.get_current_currency(self.market_list,
                                                                                 self.acronym_list,
-                                                                                currency,
+                                                                                currency1,
+                                                                                eth_price,
                                                                                 fiat.upper())
                 if isPositivePercent:
                     em = discord.Embed(title="Search results",
@@ -120,7 +126,23 @@ class CoinMarketFunctionality:
             print("An error has occured. See error.log.")
             logger.error("Exception: {}".format(str(e)))
 
-    async def calculate_coin_to_coin(self, currency1, currency2, currency_amt):
+    async def calculate_eth_price(self, currency):
+        """
+        Calculates ethereum price of a coin
+
+        @param currency - currency to convert from
+        @param currency_amt - amount of currency coins
+        """
+        try:
+            return await self.calculate_coin_to_coin(currency,
+                                                     ETHEREUM,
+                                                     1,
+                                                     False)
+        except Exception as e:
+            print("An error has occured in getting eth price. See error.log.")
+            logger.error("Exception: {}".format(str(e)))
+
+    async def calculate_coin_to_coin(self, currency1, currency2, currency_amt, post=True):
         """
         Calculates cryptocoin to another cryptocoin and displays it
 
@@ -148,16 +170,21 @@ class CoinMarketFunctionality:
             currency_amt = "{:.8f}".format(currency_amt).rstrip('0')
             if currency_amt.endswith('.'):
                 currency_amt = currency_amt.replace('.', '')
-            result = "**{} {}** converts to **{} {}**".format(currency_amt,
-                                                              currency1.title(),
-                                                              converted_amt,
-                                                              currency2.title())
-            em = discord.Embed(title="{}({}) to {}({})".format(currency1.title(),
-                                                               acronym1,
-                                                               currency2.title(),
-                                                               acronym2),
-                               description=result,
-                               colour=0xFF9900)
+            if post:
+                result = ("**{} {}** converts to **{} {}**"
+                          "".format(currency_amt,
+                                    currency1.title(),
+                                    converted_amt,
+                                    currency2.title()))
+                em = discord.Embed(title=("{}({}) to {}({})"
+                                          "".format(currency1.title(),
+                                                    acronym1,
+                                                    currency2.title(),
+                                                    acronym2)),
+                                   description=result,
+                                   colour=0xFF9900)
+            else:
+                return currency1, converted_amt
             await self.bot.say(embed=em)
         except Forbidden:
             pass

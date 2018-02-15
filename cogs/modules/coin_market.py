@@ -117,7 +117,7 @@ class CoinMarket:
                                     "for spelling errors: {}".format(currency,
                                                                      str(e)))
 
-    def _format_currency_data(self, data, fiat, single_search=True):
+    def _format_currency_data(self, data, eth_price, fiat, single_search=True):
         """
         Formats the data fetched
 
@@ -152,7 +152,7 @@ class CoinMarket:
             if formatted_btc.endswith('.'):
                 formatted_btc = formatted_btc.replace('.', '')
             if single_search:
-                formatted_btc += '\n'
+                eth_price += '\n'
             if data['market_cap_usd'] is None:
                 formatted_market_cap = 'Unknown'
             else:
@@ -183,6 +183,7 @@ class CoinMarket:
             formatted_data = ("{}\n"
                               "Price ({}): {}\n"
                               "Price (BTC): **{}**\n"
+                              "Price (ETH): **{}**\n"
                               "Market Cap ({}): {}\n"
                               "Available Supply: {}\n"
                               "Percent Change (1H): {}\n"
@@ -192,6 +193,7 @@ class CoinMarket:
                                         fiat,
                                         formatted_price,
                                         formatted_btc,
+                                        eth_price,
                                         fiat,
                                         formatted_market_cap,
                                         available_supply,
@@ -232,7 +234,7 @@ class CoinMarket:
         except Exception as e:
             raise CoinMarketException(e)
 
-    def get_current_currency(self, market_list, acronym_list, currency, fiat):
+    def get_current_currency(self, market_list, acronym_list, currency, eth_price, fiat):
         """
         Obtains the data of the specified currency and returns them using
         the current updated market list
@@ -253,7 +255,7 @@ class CoinMarket:
             if currency not in market_list:
                 raise CurrencyException("Invalid currency: `{}`".format(currency))
             data = market_list[currency]
-            formatted_data, isPositivePercent = self._format_currency_data(data, fiat)
+            formatted_data, isPositivePercent = self._format_currency_data(data, eth_price, fiat)
             return formatted_data, isPositivePercent
         except CurrencyException as e:
             raise
@@ -378,41 +380,25 @@ class CoinMarket:
         except Exception as e:
             raise CoinMarketException(e)
 
-    def get_current_multiple_currency(self, market_list, acronym_list, cached_data, currency_list, fiat):
+    def get_current_multiple_currency(self, data_list, cached_data, eth_prices, fiat):
         """
         Returns updated info of multiple coin stats using the current
         updated market list
 
-        @param market_list - list of entire crypto market
-        @param acronym_list - list of cryptocurrency acronyms
         @param cached_data - a cache of formatted cryptocurrency data
-        @param currency_list - list of cryptocurrencies to retrieve
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         @return - list of formatted cryptocurrency data
         """
         try:
             formatted_data = []
-            data_list = []
             result_msg = ''
-            for currency in currency_list:
-                try:
-                    if acronym_list is not None:
-                        if currency.upper() in acronym_list:
-                            currency = acronym_list[currency.upper()]
-                            if "Duplicate" in currency:
-                                return currency
-                        data_list.append(market_list[currency])
-                    else:
-                        data_list.append(market_list[currency])
-                except:
-                    raise CurrencyException("Invalid currency: `{}`"
-                                            "".format(currency))
-            data_list.sort(key=lambda x: int(x['rank']))
             for data in data_list:
                 if fiat not in cached_data:
                     cached_data[fiat] = {}
                 if data['name'] not in cached_data[fiat]:
+                    eth_price = eth_prices[currency]
                     formatted_msg = self._format_currency_data(data,
+                                                               eth_price,
                                                                fiat,
                                                                False)[0]
                     cached_data[fiat][data['name']] = formatted_msg
