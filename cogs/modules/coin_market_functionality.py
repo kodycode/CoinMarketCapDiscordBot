@@ -142,7 +142,9 @@ class CoinMarketFunctionality:
             converted_amt = self.coin_market.get_converted_coin_amt(self.market_list,
                                                                     currency1,
                                                                     currency2,
-                                                                    currency_amt)[1]
+                                                                    currency_amt)
+            currency_amt = "{:.8f}".format(currency_amt).rstrip('0')
+            currency_amt = currency_amt.rstrip('.')
             result = ("**{} {}** converts to **{} {}**"
                       "".format(currency_amt,
                                 currency1.title(),

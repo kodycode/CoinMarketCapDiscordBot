@@ -456,7 +456,6 @@ class CoinMarket:
             price_btc2 = float(market_list[currency2]['price_btc'])
             btc_amt = float("{:.8f}".format(currency_amt * price_btc1))
             converted_amt = "{:.8f}".format(btc_amt/price_btc2).rstrip('0')
-            currency_amt = "{:.8f}".format(currency_amt).rstrip('0')
             return converted_amt
         except Exception as e:
             print("Failed to convert coin. See error.log.")
