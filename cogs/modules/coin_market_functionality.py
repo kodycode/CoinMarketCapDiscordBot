@@ -33,7 +33,7 @@ class CoinMarketFunctionality:
         except:
             pass
 
-    async def display_search(self, currency, fiat):
+    async def display_search(self, args):
         """
         Embeds search results and displays it in chat.
 
@@ -41,51 +41,52 @@ class CoinMarketFunctionality:
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
         try:
-            msg_count = 0
-            if ',' in currency:
-                if ' ' in currency:
-                    await self.bot.say("Don't include spaces in multi-coin search.")
-                    return
-                currency_list = currency.split(',')
-                # data = self.coin_market.get_current_multiple_currency(self.market_list,
-                #                                                       self.acronym_list,
-                #                                                       currency_list,
-                #                                                       fiat.upper())
-                # for msg in data:
-                #     if msg_count == 0:
-                #         em = discord.Embed(title="Search results",
-                #                            description=msg,
-                #                            colour=0xFF9900)
-                #         msg_count += 1
-                #     else:
-                #         em = discord.Embed(description=msg,
-                #                            colour=0xFF9900)
-                #     await self.bot.say(embed=em)
+            args = list(args)
+            first_post = True
+            currency = args[0]
+            if len(args) == 1:
+                fiat = 'USD'
             else:
-                data, isPositivePercent = self.coin_market.get_current_currency(self.market_list,
-                                                                                self.acronym_list,
-                                                                                currency,
-                                                                                fiat.upper())
-                if isPositivePercent:
-                    em = discord.Embed(title="Search results",
-                                       description=data,
-                                       colour=0x00FF00)
-                else:
-                    em = discord.Embed(title="Search results",
-                                       description=data,
-                                       colour=0xD14836)
-                await self.bot.say(embed=em)
+                try:
+                    fiat = self.coin_market.fiat_check(args.copy().pop())
+                    args.pop()
+                except FiatException:
+                    fiat = 'USD'
+                    pass
+                if len(args) > 1:
+                    data = self.coin_market.get_current_multiple_currency(self.market_list,
+                                                                          self.acronym_list,
+                                                                          args,
+                                                                          fiat)
+                    for msg in data:
+                        if first_post:
+                            em = discord.Embed(title="Search results",
+                                               description=msg,
+                                               colour=0xFF9900)
+                            first_post = False
+                        else:
+                            em = discord.Embed(description=msg,
+                                               colour=0xFF9900)
+                        await self.bot.say(embed=em)
+                    return
+            data, isPositivePercent = self.coin_market.get_current_currency(self.market_list,
+                                                                            self.acronym_list,
+                                                                            currency,
+                                                                            fiat)
+            if isPositivePercent:
+                em = discord.Embed(title="Search results",
+                                   description=data,
+                                   colour=0x00FF00)
+            else:
+                em = discord.Embed(title="Search results",
+                                   description=data,
+                                   colour=0xD14836)
+            await self.bot.say(embed=em)
         except Forbidden:
             pass
         except CurrencyException as e:
             logger.error("CurrencyException: {}".format(str(e)))
             await self._say_error(e)
-        except FiatException as e:
-            error_msg = (str(e) +
-                         "\nIf you're doing multiple searches, please "
-                         "make sure there's no spaces after the comma.")
-            logger.error("FiatException: {}".format(str(e)))
-            await self.bot.say(error_msg)
         except CoinMarketException as e:
             print("An error has occured. See error.log.")
             logger.error("CoinMarketException: {}".format(str(e)))

@@ -71,8 +71,18 @@ class CoinMarketBot:
                         message.content = message.content.replace(server_prefix,
                                                                   config_data["cmd_prefix"],
                                                                   1)
+                        cmd_input = message.content[1:].split(' ')
+                        if cmd_input[0] not in bot.commands:
+                            if cmd_input[0] != '':
+                                cmd_input.insert(0, "$s")
+                                message.content = ' '.join(cmd_input)
                     await bot.process_commands(message)
                 except AttributeError:
+                    cmd_input = message.content[1:].split(' ')
+                    if cmd_input[0] not in bot.commands:
+                        if cmd_input[0] != '':
+                            cmd_input.insert(0, "$s")
+                            message.content = ' '.join(cmd_input)
                     await bot.process_commands(message)
 
     @bot.event

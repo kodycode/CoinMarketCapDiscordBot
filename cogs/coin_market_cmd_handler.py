@@ -8,7 +8,7 @@ class CoinMarketCommands:
         self.cmd_function = cmd_function
 
     @commands.command(name='search')
-    async def search(self, currency: str, fiat='USD'):
+    async def search(self, *args):
         """
         Displays the data of the specified currency.
         An example for this command would be:
@@ -17,10 +17,10 @@ class CoinMarketCommands:
         @param currency - cryptocurrency to search for
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
-        await self.cmd_function.cmc.display_search(currency, fiat)
+        await self.cmd_function.cmc.display_search(args)
 
     @commands.command(name='s', hidden=True)
-    async def s(self, currency: str, fiat='USD'):
+    async def s(self, *args):
         """
         Shortcut for "$search" command.
         An example for this command would be:
@@ -29,7 +29,7 @@ class CoinMarketCommands:
         @param currency - cryptocurrency to search for
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
-        await self.cmd_function.cmc.display_search(currency, fiat)
+        await self.cmd_function.cmc.display_search(args)
 
     @commands.command(name='stats')
     async def stats(self, fiat='USD'):

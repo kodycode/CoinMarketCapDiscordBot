@@ -405,9 +405,11 @@ class CoinMarket:
                             currency = acronym_list[currency.upper()]
                             if "Duplicate" in currency:
                                 return currency
-                        data_list.append(market_list[currency])
+                        if market_list[currency] not in data_list:
+                            data_list.append(market_list[currency])
                     else:
-                        data_list.append(market_list[currency])
+                        if market_list[currency] not in data_list:
+                            data_list.append(market_list[currency])
                 except:
                     raise CurrencyException("Invalid currency: `{}`"
                                             "".format(currency))
