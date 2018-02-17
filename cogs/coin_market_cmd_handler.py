@@ -13,6 +13,10 @@ class CoinMarketCommands:
         Displays the data of the specified currency.
         An example for this command would be:
         "$search bitcoin"
+        or
+        "$s bitcoin"
+        or even
+        "$bitcoin"
 
         @param currency - cryptocurrency to search for
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
