@@ -25,6 +25,24 @@ class AlertCommands:
         """
         await self.cmd_function.alert.add_alert(ctx, currency, operator, price, fiat)
 
+    @commands.command(name='addab', pass_context=True)
+    async def addab(self, ctx, currency: str, operator: str, btc_price: float):
+        """
+        Adds alert for when the btc price of crypto meets the condition given
+        An example for this command would be:
+        "$addab litecoin > 0.02"
+
+        @param currency - cryptocurrency to set an alert of
+        @param operator - operator for the given choices
+                          <  - less than
+                          <= - less than or equal to
+                          >  - greater than
+                          >= - greater than or equal to
+        @param btc_price - btc price for condition to compare
+        @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
+        """
+        await self.cmd_function.alert.add_alert(ctx, currency, operator, btc_price, "USD", btc=True)
+
     @commands.command(name='addah', pass_context=True)
     async def addahour(self, ctx, currency: str, operator: str, percent: float, fiat='USD'):
         """

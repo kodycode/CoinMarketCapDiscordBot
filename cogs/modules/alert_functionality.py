@@ -74,7 +74,9 @@ class AlertFunctionality:
             return True
         if currency in self.market_list:
             if kwargs:
-                if "hour" in kwargs:
+                if "btc" in kwargs:
+                    market_value = float(self.market_list[currency]["price_btc"])
+                elif "hour" in kwargs:
                     market_value = float(self.market_list[currency]["percent_change_1h"])
                 elif "day" in kwargs:
                     market_value = float(self.market_list[currency]["percent_change_24h"])
@@ -182,9 +184,15 @@ class AlertFunctionality:
                                     "".format(operator))
                 return
             if kwargs:
-                channel_alert["percent"] = ("{}".format(user_value)).rstrip('0')
-                for arg in kwargs:
-                    channel_alert["percent_change"] = arg
+                if "btc" in kwargs:
+                    user_value = "{}".format(user_value).rstrip('0')
+                    if user_value.endswith('.'):
+                        user_value = user_value.replace('.', '')
+                    channel_alert["unit"] = {"btc": "{}".format(user_value).rstrip('0')}
+                else:
+                    channel_alert["percent"] = ("{}".format(user_value)).rstrip('0')
+                    for arg in kwargs:
+                        channel_alert["percent_change"] = arg
             else:
                 channel_alert["price"] = ("{:.6f}".format(user_value)).rstrip('0')
                 if channel_alert["price"].endswith('.'):
@@ -200,7 +208,7 @@ class AlertFunctionality:
             logger.error("FiatException: {}".format(str(e)))
             await self._say_msg(str(e))
         except Exception as e:
-            print("An error has occured. See error.log.")
+            print("Failed to add alert. See error.log.")
             logger.error("Exception: {}".format(str(e)))
 
     def _save_alert_file(self, alert_data={}, backup=False):
@@ -232,7 +240,13 @@ class AlertFunctionality:
                 alert_setting = alert_list[alert_num]
                 alert_currency = alert_setting["currency"]
                 alert_operation = self._translate_operation(alert_setting["operation"])
-                if "percent" in alert_setting:
+                if "unit" in alert_setting:
+                    if "btc" in alert_setting["unit"]:
+                        alert_btc = alert_setting["unit"]["btc"]
+                        if alert_btc.endswith('.'):
+                            alert_btc = alert_btc.replace('.', '')
+                        alert_value = "{} btc".format(alert_btc)
+                elif "percent" in alert_setting:
                     alert_percent = alert_setting["percent"]
                     if alert_percent.endswith('.'):
                         alert_percent = alert_percent.replace('.', '')
@@ -259,7 +273,7 @@ class AlertFunctionality:
             logger.error("CurrencyException: {}".format(str(e)))
             await self._say_msg(str(e))
         except Exception as e:
-            print("An error has occured. See error.log.")
+            print("Failed to remove alert. See error.log.")
             logger.error("Exception: {}".format(str(e)))
 
     async def get_alert_list(self, ctx):
@@ -279,7 +293,13 @@ class AlertFunctionality:
                     for alert in alert_list:
                         currency = alert_list[alert]["currency"].title()
                         operation = self._translate_operation(alert_list[alert]["operation"])
-                        if "percent" in alert_list[alert]:
+                        if "unit" in alert_list[alert]:
+                            if "btc" in alert_list[alert]["unit"]:
+                                alert_btc = alert_list[alert]["unit"]["btc"]
+                                if alert_btc.endswith('.'):
+                                    alert_btc = alert_btc.replace('.', '')
+                                alert_value = "{}".format(alert_btc)
+                        elif "percent" in alert_list[alert]:
                             alert_percent = alert_list[alert]["percent"]
                             if alert_percent.endswith('.'):
                                 alert_percent = alert_percent.replace('.', '')
@@ -292,7 +312,10 @@ class AlertFunctionality:
                                                      currency,
                                                      operation,
                                                      alert_value))
-                        if "percent_change" in alert_list[alert]:
+                        if "unit" in alert_list[alert]:
+                            if "btc" in alert_list[alert]["unit"]:
+                                msg[int(alert)] += "**BTC**\n"
+                        elif "percent_change" in alert_list[alert]:
                             if "hour" == alert_list[alert]["percent_change"]:
                                 msg[int(alert)] += "(**1h**)\n"
                             elif "day" == alert_list[alert]["percent_change"]:
@@ -300,7 +323,7 @@ class AlertFunctionality:
                             elif "week" == alert_list[alert]["percent_change"]:
                                 msg[int(alert)] += "(**7d**)\n"
                         else:
-                            msg[int(alert)] += ("in **{}**\n"
+                            msg[int(alert)] += ("**{}**\n"
                                                 "".format(alert_list[alert]["fiat"]))
                     for line in sorted(msg):
                         result_msg += msg[line]
@@ -321,7 +344,7 @@ class AlertFunctionality:
             logger.error("CurrencyException: {}".format(str(e)))
             await self._say_msg(str(e))
         except Exception as e:
-            print("An error has occured. See error.log.")
+            print("Failed to create alert list. See error.log.")
             logger.error("Exception: {}".format(str(e)))
 
     async def alert_user(self):
@@ -330,25 +353,28 @@ class AlertFunctionality:
         cryptocurrency price
         """
         try:
-            percent_change = {}
+            kwargs = {}
             raised_alerts = defaultdict(list)
             for user in self.alert_data:
                 alert_list = self.alert_data[str(user)]
                 for alert in alert_list:
                     alert_currency = alert_list[alert]["currency"]
                     operator_symbol = alert_list[alert]["operation"]
-                    if "percent" in alert_list[alert]:
+                    if "unit" in alert_list[alert]:
+                        if "btc" in alert_list[alert]["unit"]:
+                            alert_value = alert_list[alert]["unit"]["btc"]
+                            kwargs["btc"] = True
+                    elif "percent_change" in alert_list[alert]:
                         alert_value = alert_list[alert]["percent"]
                         if alert_value.endswith('.'):
                             alert_value = alert_value.replace('.', '')
+                        kwargs[alert_list[alert]["percent_change"]] = True
                     else:
                         alert_value = alert_list[alert]["price"]
                     alert_fiat = alert_list[alert]["fiat"]
-                    if "percent_change" in alert_list[alert]:
-                        percent_change[alert_list[alert]["percent_change"]] = True
                     if not self._check_alert(alert_currency, operator_symbol,
                                              alert_value, alert_fiat,
-                                             percent_change):
+                                             kwargs):
                         alert_operator = self._translate_operation(operator_symbol)
                         raised_alerts[user].append(alert)
                         if "channel" not in alert_list[alert]:
@@ -363,7 +389,10 @@ class AlertFunctionality:
                                    "".format(alert_currency.title(),
                                              alert_operator,
                                              alert_value))
-                            if "percent_change" in alert_list[alert]:
+                            if "unit" in alert_list[alert]:
+                                if "btc" in alert_list[alert]["unit"]:
+                                    msg += "btc\n"
+                            elif "percent_change" in alert_list[alert]:
                                 if "hour" == alert_list[alert]["percent_change"]:
                                     msg += "% (**1h**)\n"
                                 elif "day" == alert_list[alert]["percent_change"]:
@@ -382,12 +411,12 @@ class AlertFunctionality:
                                            description=msg,
                                            colour=0xFF9900)
                         await self._say_msg(channel=channel_obj, emb=em)
-                    percent_change.clear()
+                    kwargs.clear()
             if raised_alerts:
                 for user in raised_alerts:
                     for alert_num in raised_alerts[user]:
                         self.alert_data[user].pop(str(alert_num))
                 self._save_alert_file(self.alert_data)
         except Exception as e:
-            print("An error has occured. See error.log.")
+            print("Failed to alert user. See error.log.")
             logger.error("Exception: {}".format(str(e)))
