@@ -250,13 +250,13 @@ class AlertFunctionality:
                     alert_percent = alert_setting["percent"]
                     if alert_percent.endswith('.'):
                         alert_percent = alert_percent.replace('.', '')
-                    alert_value = alert_percent
+                    alert_value = "{}%".format(alert_percent)
                     if "hour" == alert_setting["percent_change"]:
-                        alert_value += "% (1H)"
+                        alert_value += " (1H)"
                     elif "day" == alert_setting["percent_change"]:
-                        alert_value += "% (24H)"
+                        alert_value += " (24H)"
                     elif "week" == alert_setting["percent_change"]:
-                        alert_value += "% (7D)"
+                        alert_value += " (7D)"
                 else:
                     alert_value = alert_setting["price"]
                 alert_fiat = alert_setting["fiat"]
