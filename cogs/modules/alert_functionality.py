@@ -245,24 +245,32 @@ class AlertFunctionality:
                         alert_btc = alert_setting["unit"]["btc"]
                         if alert_btc.endswith('.'):
                             alert_btc = alert_btc.replace('.', '')
-                        alert_value = "{} btc".format(alert_btc)
+                        alert_value = "{} BTC".format(alert_btc)
                 elif "percent" in alert_setting:
                     alert_percent = alert_setting["percent"]
                     if alert_percent.endswith('.'):
                         alert_percent = alert_percent.replace('.', '')
-                    alert_value = "{}%".format(alert_percent)
+                    alert_value = alert_percent
+                    if "hour" == alert_setting["percent_change"]:
+                        alert_value += "% (1H)"
+                    elif "day" == alert_setting["percent_change"]:
+                        alert_value += "% (24H)"
+                    elif "week" == alert_setting["percent_change"]:
+                        alert_value += "% (7D)"
                 else:
                     alert_value = alert_setting["price"]
                 alert_fiat = alert_setting["fiat"]
                 alert_list.pop(str(alert_num))
                 self._save_alert_file(self.alert_data)
-                await self._say_msg("Alert **{}** where **{}** is **{}** **{}** "
-                                    "in **{}** was successfully "
-                                    "removed.".format(removed_alert,
-                                                      alert_currency,
-                                                      alert_operation,
-                                                      alert_value,
-                                                      alert_fiat))
+                msg = ("Alert **{}** where **{}** is **{}** **{}** "
+                       "".format(removed_alert,
+                                 alert_currency.title(),
+                                 alert_operation,
+                                 alert_value))
+                if "price" in alert_setting:
+                    msg += "**{}** ".format(alert_fiat)
+                msg += "was successfully removed."
+                await self._say_msg(msg)
             else:
                 await self._say_msg("The number you've entered does not exist "
                                     "in the alert list. Use `$geta` to receive "
@@ -317,11 +325,11 @@ class AlertFunctionality:
                                 msg[int(alert)] += "**BTC**\n"
                         elif "percent_change" in alert_list[alert]:
                             if "hour" == alert_list[alert]["percent_change"]:
-                                msg[int(alert)] += "(**1h**)\n"
+                                msg[int(alert)] += "(**1H**)\n"
                             elif "day" == alert_list[alert]["percent_change"]:
-                                msg[int(alert)] += "(**24h**)\n"
+                                msg[int(alert)] += "(**24H**)\n"
                             elif "week" == alert_list[alert]["percent_change"]:
-                                msg[int(alert)] += "(**7d**)\n"
+                                msg[int(alert)] += "(**7D**)\n"
                         else:
                             msg[int(alert)] += ("**{}**\n"
                                                 "".format(alert_list[alert]["fiat"]))
@@ -391,14 +399,14 @@ class AlertFunctionality:
                                              alert_value))
                             if "unit" in alert_list[alert]:
                                 if "btc" in alert_list[alert]["unit"]:
-                                    msg += "btc\n"
+                                    msg += " **BTC**\n"
                             elif "percent_change" in alert_list[alert]:
                                 if "hour" == alert_list[alert]["percent_change"]:
-                                    msg += "% (**1h**)\n"
+                                    msg += "% (**1H**)\n"
                                 elif "day" == alert_list[alert]["percent_change"]:
-                                    msg += "% (**24h**)\n"
+                                    msg += "% (**24H**)\n"
                                 elif "week" == alert_list[alert]["percent_change"]:
-                                    msg += "% (**7d**)\n"
+                                    msg += "% (**7D**)\n"
                             else:
                                 msg += " **{}**\n".format(alert_fiat)
                             msg += "<@{}>".format(user)
