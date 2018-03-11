@@ -435,7 +435,7 @@ class CoinMarket:
                                                                eth_price,
                                                                fiat,
                                                                False)[0]
-                if len(result_msg + formatted_msg) < 2000:
+                if len(result_msg) + len(formatted_msg) < 2000:
                     result_msg += "{}\n".format(formatted_msg)
                 else:
                     formatted_data.append(result_msg)
