@@ -57,7 +57,7 @@ class CoinMarketFunctionality:
                     data = self.coin_market.get_current_multiple_currency(self.market_list,
                                                                           self.acronym_list,
                                                                           args,
-                                                                          fiat)
+                                                                          fiat)[0]
                     for msg in data:
                         if first_post:
                             em = discord.Embed(title="Search results",

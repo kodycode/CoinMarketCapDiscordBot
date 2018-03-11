@@ -404,7 +404,7 @@ class CoinMarket:
                         if currency.upper() in acronym_list:
                             currency = acronym_list[currency.upper()]
                             if "Duplicate" in currency:
-                                return currency
+                                return [[currency]]
                         if market_list[currency] not in data_list:
                             data_list.append(market_list[currency])
                     else:
