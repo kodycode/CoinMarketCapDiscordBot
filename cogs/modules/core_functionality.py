@@ -123,24 +123,24 @@ class CoreFunctionality:
             if self.market_list is None:
                 raise Exception("Market list was not loaded.")
             acronym_list = {}
-            duplicate_count = 0
+            duplicate_list = {}
             for currency, data in self.market_list.items():
                 if data['symbol'] in acronym_list:
-                    duplicate_count += 1
+                    if data['symbol'] not in duplicate_list:
+                        duplicate_list[data['symbol']] = 1
+                    duplicate_list[data['symbol']] += 1
                     if data['symbol'] not in acronym_list[data['symbol']]:
-                        acronym_list[data['symbol'] + str(1)] = acronym_list[data['symbol']]
+                        acronym_list[data['symbol'] + '1'] = acronym_list[data['symbol']]
                         acronym_list[data['symbol']] = ("Duplicate acronyms "
                                                         "found. Possible "
                                                         "searches are:\n"
                                                         "{}1 ({})\n".format(data['symbol'],
                                                                             acronym_list[data['symbol']]))
-                    dupe_acronym = re.search('\\d+', acronym_list[data['symbol']])
-                    dupe_num = str(int(dupe_acronym.group(len(dupe_acronym.group()) - 1)) + 1)
-                    dupe_key = data['symbol'] + dupe_num
+                    dupe_key = data['symbol'] + str(duplicate_list[data['symbol']])
                     acronym_list[dupe_key] = currency
                     acronym_list[data['symbol']] = (acronym_list[data['symbol']]
-                                                    + "{} ({})".format(dupe_key,
-                                                                       currency))
+                                                    + "{} ({})\n".format(dupe_key,
+                                                                         currency))
                 else:
                     acronym_list[data['symbol']] = currency
             self.acronym_list = acronym_list
