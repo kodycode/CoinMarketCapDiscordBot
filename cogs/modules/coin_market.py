@@ -419,29 +419,39 @@ class CoinMarket:
                                                         data['id'],
                                                         ETHEREUM,
                                                         1)
-                if cached_data:
-                    if fiat not in cached_data:
-                        cached_data[fiat] = {}
-                    if data['id'] not in cached_data[fiat]:
-                        formatted_msg = self._format_currency_data(data,
-                                                                   eth_price,
-                                                                   fiat,
-                                                                   False)[0]
-                        cached_data[fiat][data['id']] = formatted_msg
-                    else:
-                        formatted_msg = cached_data[fiat][data['id']]
-                else:
+                if cached_data is None:
                     formatted_msg = self._format_currency_data(data,
                                                                eth_price,
                                                                fiat,
                                                                False)[0]
+                else:
+                    if cached_data:
+                        if fiat not in cached_data:
+                            cached_data[fiat] = {}
+                        if data['id'] not in cached_data[fiat]:
+                            formatted_msg = self._format_currency_data(data,
+                                                                       eth_price,
+                                                                       fiat,
+                                                                       False)[0]
+                            cached_data[fiat][data['id']] = formatted_msg
+                        else:
+                            formatted_msg = cached_data[fiat][data['id']]
+                    else:
+                        formatted_msg = self._format_currency_data(data,
+                                                                   eth_price,
+                                                                   fiat,
+                                                                   False)[0]
+                        if fiat not in cached_data:
+                            cached_data[fiat] = {}
+                        if data['id'] not in cached_data[fiat]:
+                            cached_data[fiat][data['id']] = formatted_msg
                 if len(result_msg) + len(formatted_msg) < 2000:
                     result_msg += "{}\n".format(formatted_msg)
                 else:
                     formatted_data.append(result_msg)
                     result_msg = formatted_msg
             formatted_data.append(result_msg)
-            return formatted_data
+            return formatted_data, cached_data
         except CurrencyException as e:
             raise
         except FiatException as e:

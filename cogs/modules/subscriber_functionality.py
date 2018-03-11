@@ -152,9 +152,14 @@ class SubscriberFunctionality:
                 else:
                     channel_obj = self.cache_channel[channel]
                 channel_settings = subscriber_list[channel]
-                data = await self._get_live_data(channel_obj,
-                                                 channel_settings,
-                                                 minute)
+                result = await self._get_live_data(channel_obj,
+                                                   channel_settings,
+                                                   minute)
+                if result is not None:
+                    data = result[0]
+                    self.cache_data = result[1]
+                else:
+                    data = None
                 if data:
                     for msg in data:
                         if first_post:
