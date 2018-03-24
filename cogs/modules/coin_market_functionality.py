@@ -4,23 +4,71 @@ from discord.errors import Forbidden
 import discord
 
 
+CMB_ADMIN = "CMB ADMIN"
+ADMIN_ONLY = "ADMIN_ONLY"
+CMC_DISABLED = "CMC_DISABLED"
+
+
 class CoinMarketFunctionality:
     """Handles CMC command functionality"""
 
-    def __init__(self, bot, coin_market):
+    def __init__(self, bot, coin_market, admin_list):
         self.bot = bot
+        self.admin_list = admin_list
         self.acronym_list = ""
         self.market_list = ""
         self.market_stats = ""
         self.coin_market = coin_market
 
-    def update(self, market_list, acronym_list, market_stats):
+    def update(self, market_list=None, acronym_list=None, market_stats=None, admin_list=None):
         """
-        Updates utilities with new coin market data
+        Updates utilities with new coin market and admin data
         """
-        self.market_list = market_list
-        self.acronym_list = acronym_list
-        self.market_stats = market_stats
+        if admin_list:
+            self.admin_list = admin_list
+        if market_list:
+            self.market_list = market_list
+        if acronym_list:
+            self.acronym_list = acronym_list
+        if market_stats:
+            self.market_stats = market_stats
+
+    def _check_permission(self, ctx):
+        """
+        Checks if user contains the correct permissions to use these
+        commands
+        """
+        user_roles = ctx.message.author.roles
+        server_id = ctx.message.server.id
+        if server_id not in self.admin_list:
+            return True
+        elif (ADMIN_ONLY in self.admin_list[server_id]
+              or CMC_DISABLED in self.admin_list[server_id]):
+            if CMB_ADMIN not in [role.name for role in user_roles]:
+                return False
+        return True
+
+    async def _say_msg(self, msg=None, channel=None, emb=None):
+        """
+        Bot will say msg if given correct permissions
+
+        @param msg - msg to say
+        @param channel - channel to send msg to
+        @param emb - embedded msg to say
+        """
+        try:
+            if channel:
+                if emb:
+                    await self.bot.send_message(channel, embed=emb)
+                else:
+                    await self.bot.send_message(channel, msg)
+            else:
+                if emb:
+                    await self.bot.say(embed=emb)
+                else:
+                    await self.bot.say(msg)
+        except:
+            pass
 
     async def _say_error(self, e):
         """
@@ -33,7 +81,7 @@ class CoinMarketFunctionality:
         except:
             pass
 
-    async def display_search(self, args):
+    async def display_search(self, ctx, args):
         """
         Embeds search results and displays it in chat.
 
@@ -41,6 +89,8 @@ class CoinMarketFunctionality:
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
         try:
+            if not self._check_permission(ctx):
+                return
             args = list(args)
             first_post = True
             currency = args[0]
@@ -94,13 +144,15 @@ class CoinMarketFunctionality:
             print("An error has occured. See error.log.")
             logger.error("Exception: {}".format(str(e)))
 
-    async def display_stats(self, fiat):
+    async def display_stats(self, ctx, fiat):
         """
         Obtains the market stats to display
 
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
         try:
+            if not self._check_permission(ctx):
+                return
             data = self.coin_market.get_current_stats(self.market_stats, fiat)
             em = discord.Embed(title="Market Stats",
                                description=data,
@@ -121,7 +173,7 @@ class CoinMarketFunctionality:
             print("An error has occured. See error.log.")
             logger.error("Exception: {}".format(str(e)))
 
-    async def calculate_coin_to_coin(self, currency1, currency2, currency_amt):
+    async def calculate_coin_to_coin(self, ctx, currency1, currency2, currency_amt):
         """
         Calculates cryptocoin to another cryptocoin and displays it
 
@@ -130,6 +182,8 @@ class CoinMarketFunctionality:
         @param currency_amt - amount of currency coins
         """
         try:
+            if not self._check_permission(ctx):
+                return
             if currency1.upper() in self.acronym_list:
                 acronym1 = currency1.upper()
                 currency1 = self.acronym_list[currency1.upper()]
@@ -166,7 +220,7 @@ class CoinMarketFunctionality:
             print("An error has occured. See error.log.")
             logger.error("Exception: {}".format(str(e)))
 
-    async def calculate_coin_to_fiat(self, currency, currency_amt, fiat):
+    async def calculate_coin_to_fiat(self, ctx, currency, currency_amt, fiat):
         """
         Calculates coin to fiat rate and displays it
 
@@ -175,6 +229,8 @@ class CoinMarketFunctionality:
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
         try:
+            if not self._check_permission(ctx):
+                return
             ucase_fiat = self.coin_market.fiat_check(fiat)
             if currency.upper() in self.acronym_list:
                 currency = self.acronym_list[currency.upper()]
@@ -205,7 +261,7 @@ class CoinMarketFunctionality:
             print("An error has occured. See error.log.")
             logger.error("Exception: {}".format(str(e)))
 
-    async def calculate_fiat_to_coin(self, currency, price, fiat):
+    async def calculate_fiat_to_coin(self, ctx, currency, price, fiat):
         """
         Calculates coin to fiat rate and displays it
 
@@ -214,6 +270,8 @@ class CoinMarketFunctionality:
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
         try:
+            if not self._check_permission(ctx):
+                return
             ucase_fiat = self.coin_market.fiat_check(fiat)
             if currency.upper() in self.acronym_list:
                 currency = self.acronym_list[currency.upper()]
@@ -245,7 +303,7 @@ class CoinMarketFunctionality:
             print("An error has occured. See error.log.")
             logger.error("Exception: {}".format(str(e)))
 
-    async def calculate_profit(self, currency, currency_amt, cost, fiat):
+    async def calculate_profit(self, ctx, currency, currency_amt, cost, fiat):
         """
         Performs profit calculation operation and displays it
 
@@ -255,6 +313,8 @@ class CoinMarketFunctionality:
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
         try:
+            if not self._check_permission(ctx):
+                return
             ucase_fiat = self.coin_market.fiat_check(fiat)
             if currency.upper() in self.acronym_list:
                 currency = self.acronym_list[currency.upper()]

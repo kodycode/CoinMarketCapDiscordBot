@@ -4,6 +4,8 @@ import json
 import logging
 import requests
 
+CMB_ADMIN = "CMB ADMIN"
+PREFIX_DISABLED = "PREFIX_DISABLED"
 DISCORD_BOT_URL = "https://discordbots.org/api/bots/353373501274456065/stats"
 COG_MANAGER = "cogs.cog_manager"
 with open('config.json') as config:
@@ -141,6 +143,24 @@ def check_prefix_file():
         logger.error("Exception: {}".format(str(e)))
 
 
+def _check_permission(ctx):
+    """
+    Checks if user contains the correct permissions to use these
+    commands
+    """
+    with open('admins.json') as admins:
+        admin_list = json.load(admins)
+    user_roles = ctx.message.author.roles
+    server_id = ctx.message.server.id
+    if server_id not in admin_list:
+        return True
+    elif (CMB_ADMIN in admin_list[server_id]
+          or PREFIX_DISABLED in admin_list[server_id]):
+        if CMB_ADMIN not in [role.name for role in user_roles]:
+            return False
+    return True
+
+
 def update_server_count(server_count):
     try:
         header = {'Authorization': '{}'.format(config_data["auth_token"])}
@@ -163,6 +183,8 @@ async def prefix(ctx, prefix: str):
     @param prefix - new prefix for the channel
     """
     try:
+        if not _check_permission(ctx):
+            return
         try:
             server = str(ctx.message.server.id)
         except:

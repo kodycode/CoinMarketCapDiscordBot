@@ -2,12 +2,12 @@ from bot_logger import logger
 from cogs.modules.alert_functionality import AlertFunctionality
 from cogs.modules.coin_market_functionality import CoinMarketFunctionality
 from cogs.modules.coin_market import CoinMarket
+from cogs.modules.misc_functionality import MiscFunctionality
 from cogs.modules.subscriber_functionality import SubscriberFunctionality
 import asyncio
 import datetime
 import discord
 import json
-import re
 
 
 class CoreFunctionalityException(Exception):
@@ -26,14 +26,58 @@ class CoreFunctionality:
         self.market_stats = None
         self.acronym_list = None
         self.coin_market = CoinMarket()
-        self.cmc = CoinMarketFunctionality(bot, self.coin_market)
+        self.admin_data = self._check_admin_file()
+        self.cmc = CoinMarketFunctionality(bot,
+                                           self.coin_market,
+                                           self.admin_data)
         self.alert = AlertFunctionality(bot,
                                         self.coin_market,
-                                        self.config_data["alert_capacity"])
+                                        self.config_data["alert_capacity"],
+                                        self.admin_data)
         self.subscriber = SubscriberFunctionality(bot,
                                                   self.coin_market,
-                                                  self.config_data["subscriber_capacity"])
+                                                  self.config_data["subscriber_capacity"],
+                                                  self.admin_data)
+        self.misc = MiscFunctionality(bot, self.admin_data)
+        self._save_admin_file(self.admin_data, backup=True)
         self.bot.loop.create_task(self._continuous_updates())
+
+    def _check_admin_file(self):
+        """
+        Checks to see if there's a valid admins.json file
+        """
+        try:
+            with open('admins.json') as admins:
+                return json.load(admins)
+        except FileNotFoundError:
+            self._save_admin_file()
+            return json.loads('{}')
+        except Exception as e:
+            print("Unable to load admin file. See error.log.")
+            logger.error("Exception: {}".format(str(e)))
+
+    def _save_admin_file(self, admin_data={}, backup=False):
+        """
+        Saves admin.json file
+        """
+        if backup:
+            alert_filename = "admins_backup.json"
+        else:
+            alert_filename = "admins.json"
+        with open(alert_filename, 'w') as outfile:
+            json.dump(admin_data,
+                      outfile,
+                      indent=4)
+
+    def _update_admin_data(self):
+        try:
+            self.cmc.update(admin_list=self.admin_data)
+            self.alert.update(admin_list=self.admin_data)
+            self.subscriber.update(admin_list=self.admin_data)
+            self.misc.update(admin_list=self.admin_data)
+        except Exception as e:
+            print("Failed to update admin data. See error.log.")
+            logger.error("Exception: {}".format(str(e)))
 
     async def _update_data(self, minute=0):
         try:
@@ -44,7 +88,7 @@ class CoreFunctionality:
                             self.market_stats)
             self.alert.update(self.market_list, self.acronym_list)
             self.subscriber.update(self.market_list, self.acronym_list)
-            await self.update_game_status()
+            await self._update_game_status()
             await self.alert.alert_user()
             if self.started:
                 await self.subscriber.display_live_data(minute)
@@ -52,7 +96,7 @@ class CoreFunctionality:
             print("Failed to update data. See error.log.")
             logger.error("Exception: {}".format(str(e)))
 
-    async def update_game_status(self):
+    async def _update_game_status(self):
         """
         Updates the game status of the bot
         """
@@ -146,4 +190,60 @@ class CoreFunctionality:
             self.acronym_list = acronym_list
         except Exception as e:
             print("Failed to load cryptocurrency acronyms. See error.log.")
+            logger.error("Exception: {}".format(str(e)))
+
+    async def _say_msg(self, msg=None, channel=None, emb=None):
+        """
+        Bot will say msg if given correct permissions
+
+        @param msg - msg to say
+        @param channel - channel to send msg to
+        @param emb - embedded msg to say
+        """
+        try:
+            if channel:
+                if emb:
+                    await self.bot.send_message(channel, embed=emb)
+                else:
+                    await self.bot.send_message(channel, msg)
+            else:
+                if emb:
+                    await self.bot.say(embed=emb)
+                else:
+                    await self.bot.say(msg)
+        except:
+            pass
+
+    async def toggle_commands(self, ctx, mode):
+        """
+        Toggles the command mode on/off
+        """
+        try:
+            try:
+                user_roles = ctx.message.author.roles
+            except:
+                await self._say_msg("Command must be used in a server.")
+                return
+            if "CMB Admin" not in [role.name for role in user_roles]:
+                await self._say_msg("Admin privilege is required for "
+                                    "this command.")
+                return
+            channel = ctx.message.channel.id
+            try:
+                server = self.bot.get_channel(channel).server  # validate channel
+            except:
+                await self._say_msg("Not a valid server to toggle admin mode.")
+                return
+            if server.id not in self.admin_data:
+                self.admin_data[server.id] = [mode]
+            elif mode in self.admin_data[server.id]:
+                self.admin_data[server.id].remove(mode)
+                await self._say_msg("'{}' has been taken off.".format(mode))
+            elif mode not in self.admin_data[server.id]:
+                self.admin_data[server.id].append(mode)
+                await self._say_msg("Server set '{}'.".format(mode))
+            self._save_admin_file(self.admin_data)
+            self._update_admin_data()
+        except Exception as e:
+            print("Failed to toggle admin mode. See error.log.")
             logger.error("Exception: {}".format(str(e)))

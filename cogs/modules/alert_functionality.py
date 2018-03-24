@@ -6,11 +6,17 @@ import discord
 import json
 
 
+CMB_ADMIN = "CMB ADMIN"
+ADMIN_ONLY = "ADMIN_ONLY"
+ALERT_DISABLED = "ALERT_DISABLED"
+
+
 class AlertFunctionality:
     """Handles Alert Command functionality"""
 
-    def __init__(self, bot, coin_market, alert_capacity):
+    def __init__(self, bot, coin_market, alert_capacity, admin_list):
         self.bot = bot
+        self.admin_list = admin_list
         self.coin_market = coin_market
         self.alert_capacity = alert_capacity
         self.market_list = ""
@@ -19,12 +25,31 @@ class AlertFunctionality:
         self.alert_data = self._check_alert_file()
         self._save_alert_file(self.alert_data, backup=True)
 
-    def update(self, market_list, acronym_list):
+    def update(self, market_list=None, acronym_list=None, admin_list=None):
         """
-        Updates utilities with new coin market data
+        Updates utilities with new coin market and admin data
         """
-        self.market_list = market_list
-        self.acronym_list = acronym_list
+        if admin_list:
+            self.admin_list = admin_list
+        if market_list:
+            self.market_list = market_list
+        if acronym_list:
+            self.acronym_list = acronym_list
+
+    def _check_permission(self, ctx):
+        """
+        Checks if user contains the correct permissions to use these
+        commands
+        """
+        user_roles = ctx.message.author.roles
+        server_id = ctx.message.server.id
+        if server_id not in self.admin_list:
+            return True
+        elif (ADMIN_ONLY in self.admin_list[server_id]
+              or ALERT_DISABLED in self.admin_list[server_id]):
+            if CMB_ADMIN not in [role.name for role in user_roles]:
+                return False
+        return True
 
     def _check_alert_file(self):
         """
@@ -140,6 +165,8 @@ class AlertFunctionality:
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
         try:
+            if not self._check_permission(ctx):
+                return
             alert_num = None
             ucase_fiat = self.coin_market.fiat_check(fiat)
             if currency.upper() in self.acronym_list:
@@ -232,6 +259,8 @@ class AlertFunctionality:
         @param alert_num - number of the specific alert to remove
         """
         try:
+            if not self._check_permission(ctx):
+                return
             user_id = ctx.message.author.id
             user_list = self.alert_data
             alert_list = user_list[user_id]
@@ -291,6 +320,8 @@ class AlertFunctionality:
         @param ctx - context of the command sent
         """
         try:
+            if not self._check_permission(ctx):
+                return
             user_id = ctx.message.author.id
             user_list = self.alert_data
             msg = {}

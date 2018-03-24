@@ -4,40 +4,73 @@ import json
 import time
 
 
+CMB_ADMIN = "CMB ADMIN"
+ADMIN_ONLY = "ADMIN_ONLY"
+MISC_DISABLED = "MISC_DISABLED"
+
+
 class MiscFunctionality:
     """Handles all Misc command functionality"""
 
-    def __init__(self, bot):
+    def __init__(self, bot, admin_list):
         self.bot = bot
+        self.admin_list = admin_list
         self.start_time = time.time()
 
-    async def display_bot_profile(self):
+    def _check_permission(self, ctx):
+        """
+        Checks if user contains the correct permissions to use these
+        commands
+        """
+        user_roles = ctx.message.author.roles
+        server_id = ctx.message.server.id
+        if server_id not in self.admin_list:
+            return True
+        elif (ADMIN_ONLY in self.admin_list[server_id]
+              or MISC_DISABLED in self.admin_list[server_id]):
+            if CMB_ADMIN not in [role.name for role in user_roles]:
+                return False
+        return True
+
+    def update(self, admin_list=None):
+        """
+        Updates utilities with new coin market and admin data
+        """
+        self.admin_list = admin_list
+
+    async def display_bot_profile(self, ctx):
         """
         Displays the bot profile URL
         """
         try:
+            if not self._check_permission(ctx):
+                return
             msg = "https://discordbots.org/bot/353373501274456065"
             await self.bot.say(msg)
         except Exception as e:
             print("An error has occured. See error.log.")
             logger.error("Exception: {}".format(str(e)))
 
-    async def display_update_page(self):
+    async def display_update_page(self, ctx):
         """
         Links the update page URL
         """
         try:
+            if not self._check_permission(ctx):
+                return
             msg = "https://github.com/kodycode/CoinMarketDiscordBot/wiki/Updates"
             await self.bot.say(msg)
         except Exception as e:
             print("An error has occured. See error.log.")
             logger.error("Exception: {}".format(str(e)))
 
-    async def display_donation_option(self):
+    async def display_donation_option(self, ctx):
         """
         Displays donation message
         """
         try:
+            if not self._check_permission(ctx):
+                return
             msg = ("If you'd like to donate, you can send coins to the "
                    "following addresses:\n```"
                    "ETH: 0x13318b2A795940D119b999ECfe827708131fA3f6\n"
@@ -48,11 +81,13 @@ class MiscFunctionality:
             print("An error has occured. See error.log.")
             logger.error("Exception: {}".format(str(e)))
 
-    async def display_info(self):
+    async def display_info(self, ctx):
         """
         Displays information about the bot
         """
         try:
+            if not self._check_permission(ctx):
+                return
             alert_count = 0
             channel_count = 0
             member_count = 0

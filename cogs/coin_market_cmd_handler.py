@@ -7,8 +7,8 @@ class CoinMarketCommands:
     def __init__(self, cmd_function):
         self.cmd_function = cmd_function
 
-    @commands.command(name='search')
-    async def search(self, *args):
+    @commands.command(name='search', pass_context=True)
+    async def search(self, ctx, *args):
         """
         Displays the data of the specified currency.
         An example for this command would be:
@@ -21,10 +21,10 @@ class CoinMarketCommands:
         @param currency - cryptocurrency to search for
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
-        await self.cmd_function.cmc.display_search(args)
+        await self.cmd_function.cmc.display_search(ctx, args)
 
-    @commands.command(name='s', hidden=True)
-    async def s(self, *args):
+    @commands.command(name='s', pass_context=True, hidden=True)
+    async def s(self, ctx, *args):
         """
         Shortcut for "$search" command.
         An example for this command would be:
@@ -33,10 +33,10 @@ class CoinMarketCommands:
         @param currency - cryptocurrency to search for
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
-        await self.cmd_function.cmc.display_search(args)
+        await self.cmd_function.cmc.display_search(ctx, args)
 
-    @commands.command(name='stats')
-    async def stats(self, fiat='USD'):
+    @commands.command(name='stats', pass_context=True)
+    async def stats(self, ctx, fiat='USD'):
         """
         Displays the market stats.
         An example for this command would be:
@@ -44,10 +44,10 @@ class CoinMarketCommands:
 
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
-        await self.cmd_function.cmc.display_stats(fiat)
+        await self.cmd_function.cmc.display_stats(ctx, fiat)
 
-    @commands.command(name='profit')
-    async def profit(self, currency: str, currency_amt: float, cost: float, fiat='USD'):
+    @commands.command(name='profit', pass_context=True)
+    async def profit(self, ctx, currency: str, currency_amt: float, cost: float, fiat='USD'):
         """
         Calculates and displays profit made from buying cryptocurrency.
         An example for this command would be:
@@ -58,13 +58,14 @@ class CoinMarketCommands:
         @param cost - the price of the cryptocurrency bought at the time
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
-        await self.cmd_function.cmc.calculate_profit(currency,
+        await self.cmd_function.cmc.calculate_profit(ctx,
+                                                     currency,
                                                      currency_amt,
                                                      cost,
                                                      fiat)
 
-    @commands.command(name='p', hidden=True)
-    async def p(self, currency: str, currency_amt: float, cost: float, fiat='USD'):
+    @commands.command(name='p', pass_context=True, hidden=True)
+    async def p(self, ctx, currency: str, currency_amt: float, cost: float, fiat='USD'):
         """
         Shortcut for $profit command.
 
@@ -73,13 +74,14 @@ class CoinMarketCommands:
         @param cost - the price of the cryptocurrency bought at the time
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
-        await self.cmd_function.cmc.calculate_profit(currency,
+        await self.cmd_function.cmc.calculate_profit(ctx,
+                                                     currency,
                                                      currency_amt,
                                                      cost,
                                                      fiat)
 
-    @commands.command(name='cb')
-    async def cb(self, currency1: str, currency2: str, currency_amt: float):
+    @commands.command(name='cb', pass_context=True)
+    async def cb(self, ctx, currency1: str, currency2: str, currency_amt: float):
         """
         Displays conversion from one cryptocurrency to another
         An example for this command would be:
@@ -90,12 +92,13 @@ class CoinMarketCommands:
         @param currency_amt - amount of currency1 to convert
                               to currency2
         """
-        await self.cmd_function.cmc.calculate_coin_to_coin(currency1,
+        await self.cmd_function.cmc.calculate_coin_to_coin(ctx,
+                                                           currency1,
                                                            currency2,
                                                            currency_amt)
 
-    @commands.command(name='cc')
-    async def cc(self, currency: str, currency_amt: float, fiat='USD'):
+    @commands.command(name='cc', pass_context=True)
+    async def cc(self, ctx, currency: str, currency_amt: float, fiat='USD'):
         """
         Displays conversion from coins to fiat.
         An example for this command would be:
@@ -105,12 +108,13 @@ class CoinMarketCommands:
         @param currency_amt - amount of currency coins
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
-        await self.cmd_function.cmc.calculate_coin_to_fiat(currency,
+        await self.cmd_function.cmc.calculate_coin_to_fiat(ctx,
+                                                           currency,
                                                            currency_amt,
                                                            fiat)
 
-    @commands.command(name='cf')
-    async def cf(self, currency: str, price: float, fiat='USD'):
+    @commands.command(name='cf', pass_context=True)
+    async def cf(self, ctx, currency: str, price: float, fiat='USD'):
         """
         Displays conversion from fiat to coins.
         An example for this command would be:
@@ -120,6 +124,7 @@ class CoinMarketCommands:
         @param price - price amount you wish to convert to coins
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
-        await self.cmd_function.cmc.calculate_fiat_to_coin(currency,
+        await self.cmd_function.cmc.calculate_fiat_to_coin(ctx,
+                                                           currency,
                                                            price,
                                                            fiat)

@@ -6,11 +6,17 @@ import discord
 import json
 
 
+CMB_ADMIN = "CMB ADMIN"
+ADMIN_ONLY = "ADMIN_ONLY"
+SUBSCRIBER_DISABLED = "SUBSCRIBER_DISABLED"
+
+
 class SubscriberFunctionality:
     """Handles Subscriber command Functionality"""
 
-    def __init__(self, bot, coin_market, sub_capacity):
+    def __init__(self, bot, coin_market, sub_capacity, admin_list):
         self.bot = bot
+        self.admin_list = admin_list
         self.coin_market = coin_market
         self.sub_capacity = int(sub_capacity)
         self.market_list = ""
@@ -21,13 +27,32 @@ class SubscriberFunctionality:
         self.subscriber_data = self._check_subscriber_file()
         self._save_subscriber_file(self.subscriber_data, backup=True)
 
-    def update(self, market_list, acronym_list):
+    def update(self, market_list=None, acronym_list=None, admin_list=None):
         """
-        Updates utilities with new coin market data
+        Updates utilities with new coin market and admin data
         """
-        self.market_list = market_list
-        self.acronym_list = acronym_list
-        self.cache_data.clear()
+        if admin_list:
+            self.admin_list = admin_list
+        if market_list:
+            self.market_list = market_list
+        if acronym_list:
+            self.acronym_list = acronym_list
+            self.cache_data.clear()
+
+    def _check_permission(self, ctx):
+        """
+        Checks if user contains the correct permissions to use these
+        commands
+        """
+        user_roles = ctx.message.author.roles
+        server_id = ctx.message.server.id
+        if server_id not in self.admin_list:
+            return True
+        elif (ADMIN_ONLY in self.admin_list[server_id]
+              or SUBSCRIBER_DISABLED in self.admin_list[server_id]):
+            if CMB_ADMIN not in [role.name for role in user_roles]:
+                return False
+        return True
 
     def _check_subscriber_file(self):
         """
@@ -193,6 +218,8 @@ class SubscriberFunctionality:
         @param fiat - desired fiat currency (i.e. 'EUR', 'USD')
         """
         try:
+            if not self._check_permission(ctx):
+                return
             ucase_fiat = self.coin_market.fiat_check(fiat)
             channel = ctx.message.channel.id
             subscriber_list = self.subscriber_data
@@ -232,6 +259,8 @@ class SubscriberFunctionality:
         @param ctx - context of the command sent
         """
         try:
+            if not self._check_permission(ctx):
+                return
             channel = ctx.message.channel.id
             subscriber_list = self.subscriber_data
             if channel in subscriber_list:
@@ -251,6 +280,8 @@ class SubscriberFunctionality:
         Turns purge mode on/off for the channel
         """
         try:
+            if not self._check_permission(ctx):
+                return
             channel = ctx.message.channel.id
             subscriber_list = self.subscriber_data
             self.bot.get_channel(channel).server  # validate channel
@@ -277,6 +308,8 @@ class SubscriberFunctionality:
         @param ctx - context of the command sent
         """
         try:
+            if not self._check_permission(ctx):
+                return
             channel = ctx.message.channel.id
             subscriber_list = self.subscriber_data
             if channel in subscriber_list:
@@ -314,6 +347,8 @@ class SubscriberFunctionality:
         @param currency - the cryptocurrency to add
         """
         try:
+            if not self._check_permission(ctx):
+                return
             if currency.upper() in self.acronym_list:
                 currency = self.acronym_list[currency.upper()]
                 if "Duplicate" in currency:
@@ -353,6 +388,8 @@ class SubscriberFunctionality:
         @param currency - the cryptocurrency to remove
         """
         try:
+            if not self._check_permission(ctx):
+                return
             if currency.upper() in self.acronym_list:
                 currency = self.acronym_list[currency.upper()]
                 if "Duplicate" in currency:
@@ -391,6 +428,8 @@ class SubscriberFunctionality:
                          (only accepts multiples of 5)
         """
         try:
+            if not self._check_permission(ctx):
+                return
             if rate not in self.supported_rates:
                 await self._say_msg("The rate entered is not supported. "
                                     "Current intervals you can choose are:\n"
@@ -423,6 +462,8 @@ class SubscriberFunctionality:
         @param ctx - context of the command sent
         """
         try:
+            if not self._check_permission(ctx):
+                return
             error = False
             channel = ctx.message.channel.id
             if channel not in self.subscriber_data:
