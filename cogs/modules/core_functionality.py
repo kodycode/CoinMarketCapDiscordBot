@@ -10,6 +10,9 @@ import discord
 import json
 
 
+CMB_ADMIN = "CMB ADMIN"
+
+
 class CoreFunctionalityException(Exception):
     """Handles core related errors"""
 
@@ -254,8 +257,8 @@ class CoreFunctionality:
                 await self._say_msg("Command must be used in a server.")
                 return
             if CMB_ADMIN not in [role.name for role in user_roles]:
-                await self._say_msg("Admin privilege is required for "
-                                    "this command.")
+                await self._say_msg("Admin role '{}' is required for "
+                                    "this command.".format(CMB_ADMIN))
                 return
             channel = ctx.message.channel.id
             try:
@@ -265,6 +268,7 @@ class CoreFunctionality:
                 return
             if server.id not in self.server_data:
                 self.server_data[server.id] = [mode]
+                await self._say_msg("Server set '{}'.".format(mode))
             elif mode in self.server_data[server.id]:
                 self.server_data[server.id].remove(mode)
                 await self._say_msg("'{}' has been taken off.".format(mode))

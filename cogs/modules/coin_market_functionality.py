@@ -91,6 +91,9 @@ class CoinMarketFunctionality:
         try:
             if not self._check_permission(ctx):
                 return
+            if not args:
+                await self._say_msg("No coins were entered.")
+                return
             args = list(args)
             first_post = True
             currency = args[0]
