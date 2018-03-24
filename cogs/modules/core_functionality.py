@@ -44,11 +44,11 @@ class CoreFunctionality:
 
     def _check_admin_file(self):
         """
-        Checks to see if there's a valid admins.json file
+        Checks to see if there's a valid server_settings.json file
         """
         try:
-            with open('admins.json') as admins:
-                return json.load(admins)
+            with open('server_settings.json') as settings:
+                return json.load(settings)
         except FileNotFoundError:
             self._save_admin_file()
             return json.loads('{}')
@@ -58,14 +58,14 @@ class CoreFunctionality:
 
     def _save_admin_file(self, admin_data={}, backup=False):
         """
-        Saves admin.json file
+        Saves server_settings.json file
         """
         if backup:
-            alert_filename = "admins_backup.json"
+            server_settings_filename = "server_settings_backup.json"
         else:
-            alert_filename = "admins.json"
-        with open(alert_filename, 'w') as outfile:
-            json.dump(admin_data,
+            server_settings_filename = "server_settings.json"
+        with open(server_settings_filename, 'w') as outfile:
+            json.dump(server_settings_filename,
                       outfile,
                       indent=4)
 

@@ -148,8 +148,8 @@ def _check_permission(ctx):
     Checks if user contains the correct permissions to use these
     commands
     """
-    with open('admins.json') as admins:
-        admin_list = json.load(admins)
+    with open('server_settings.json') as settings:
+        admin_list = json.load(settings)
     user_roles = ctx.message.author.roles
     server_id = ctx.message.server.id
     if server_id not in admin_list:
