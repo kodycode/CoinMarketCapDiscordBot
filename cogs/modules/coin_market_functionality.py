@@ -138,8 +138,9 @@ class CoinMarketFunctionality:
         except Forbidden:
             pass
         except CurrencyException as e:
-            logger.error("CurrencyException: {}".format(str(e)))
-            await self._say_error(e)
+            # logger.error("CurrencyException: {}".format(str(e)))
+            # await self._say_error(e)
+            pass
         except CoinMarketException as e:
             print("An error has occured. See error.log.")
             logger.error("CoinMarketException: {}".format(str(e)))
