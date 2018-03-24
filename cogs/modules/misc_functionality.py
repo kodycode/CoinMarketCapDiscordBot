@@ -12,9 +12,9 @@ MISC_DISABLED = "MISC_DISABLED"
 class MiscFunctionality:
     """Handles all Misc command functionality"""
 
-    def __init__(self, bot, admin_list):
+    def __init__(self, bot, server_data):
         self.bot = bot
-        self.admin_list = admin_list
+        self.server_data = server_data
         self.start_time = time.time()
 
     def _check_permission(self, ctx):
@@ -24,19 +24,19 @@ class MiscFunctionality:
         """
         user_roles = ctx.message.author.roles
         server_id = ctx.message.server.id
-        if server_id not in self.admin_list:
+        if server_id not in self.server_data:
             return True
-        elif (ADMIN_ONLY in self.admin_list[server_id]
-              or MISC_DISABLED in self.admin_list[server_id]):
+        elif (ADMIN_ONLY in self.server_data[server_id]
+              or MISC_DISABLED in self.server_data[server_id]):
             if CMB_ADMIN not in [role.name for role in user_roles]:
                 return False
         return True
 
-    def update(self, admin_list=None):
+    def update(self, server_data=None):
         """
-        Updates utilities with new coin market and admin data
+        Updates utilities with new coin market and server data
         """
-        self.admin_list = admin_list
+        self.server_data = server_data
 
     async def display_bot_profile(self, ctx):
         """

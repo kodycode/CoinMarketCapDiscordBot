@@ -14,9 +14,9 @@ SUBSCRIBER_DISABLED = "SUBSCRIBER_DISABLED"
 class SubscriberFunctionality:
     """Handles Subscriber command Functionality"""
 
-    def __init__(self, bot, coin_market, sub_capacity, admin_list):
+    def __init__(self, bot, coin_market, sub_capacity, server_data):
         self.bot = bot
-        self.admin_list = admin_list
+        self.server_data = server_data
         self.coin_market = coin_market
         self.sub_capacity = int(sub_capacity)
         self.market_list = ""
@@ -27,12 +27,12 @@ class SubscriberFunctionality:
         self.subscriber_data = self._check_subscriber_file()
         self._save_subscriber_file(self.subscriber_data, backup=True)
 
-    def update(self, market_list=None, acronym_list=None, admin_list=None):
+    def update(self, market_list=None, acronym_list=None, server_data=None):
         """
-        Updates utilities with new coin market and admin data
+        Updates utilities with new coin market and server data
         """
-        if admin_list:
-            self.admin_list = admin_list
+        if server_data:
+            self.server_data = server_data
         if market_list:
             self.market_list = market_list
         if acronym_list:
@@ -46,10 +46,10 @@ class SubscriberFunctionality:
         """
         user_roles = ctx.message.author.roles
         server_id = ctx.message.server.id
-        if server_id not in self.admin_list:
+        if server_id not in self.server_data:
             return True
-        elif (ADMIN_ONLY in self.admin_list[server_id]
-              or SUBSCRIBER_DISABLED in self.admin_list[server_id]):
+        elif (ADMIN_ONLY in self.server_data[server_id]
+              or SUBSCRIBER_DISABLED in self.server_data[server_id]):
             if CMB_ADMIN not in [role.name for role in user_roles]:
                 return False
         return True

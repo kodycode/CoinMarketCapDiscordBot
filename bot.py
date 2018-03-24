@@ -149,13 +149,13 @@ def _check_permission(ctx):
     commands
     """
     with open('server_settings.json') as settings:
-        admin_list = json.load(settings)
+        server_list = json.load(settings)
     user_roles = ctx.message.author.roles
     server_id = ctx.message.server.id
-    if server_id not in admin_list:
+    if server_id not in server_list:
         return True
-    elif (CMB_ADMIN in admin_list[server_id]
-          or PREFIX_DISABLED in admin_list[server_id]):
+    elif (CMB_ADMIN in server_list[server_id]
+          or PREFIX_DISABLED in server_list[server_id]):
         if CMB_ADMIN not in [role.name for role in user_roles]:
             return False
     return True

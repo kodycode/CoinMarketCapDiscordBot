@@ -26,23 +26,23 @@ class CoreFunctionality:
         self.market_stats = None
         self.acronym_list = None
         self.coin_market = CoinMarket()
-        self.admin_data = self._check_admin_file()
+        self.server_data = self._check_server_file()
         self.cmc = CoinMarketFunctionality(bot,
                                            self.coin_market,
-                                           self.admin_data)
+                                           self.server_data)
         self.alert = AlertFunctionality(bot,
                                         self.coin_market,
                                         self.config_data["alert_capacity"],
-                                        self.admin_data)
+                                        self.server_data)
         self.subscriber = SubscriberFunctionality(bot,
                                                   self.coin_market,
                                                   self.config_data["subscriber_capacity"],
-                                                  self.admin_data)
-        self.misc = MiscFunctionality(bot, self.admin_data)
-        self._save_admin_file(self.admin_data, backup=True)
+                                                  self.server_data)
+        self.misc = MiscFunctionality(bot, self.server_data)
+        self._save_server_file(self.server_data, backup=True)
         self.bot.loop.create_task(self._continuous_updates())
 
-    def _check_admin_file(self):
+    def _check_server_file(self):
         """
         Checks to see if there's a valid server_settings.json file
         """
@@ -50,13 +50,13 @@ class CoreFunctionality:
             with open('server_settings.json') as settings:
                 return json.load(settings)
         except FileNotFoundError:
-            self._save_admin_file()
+            self._save_server_file()
             return json.loads('{}')
         except Exception as e:
-            print("Unable to load admin file. See error.log.")
+            print("Unable to load server file. See error.log.")
             logger.error("Exception: {}".format(str(e)))
 
-    def _save_admin_file(self, admin_data={}, backup=False):
+    def _save_server_file(self, server_data={}, backup=False):
         """
         Saves server_settings.json file
         """
@@ -65,18 +65,18 @@ class CoreFunctionality:
         else:
             server_settings_filename = "server_settings.json"
         with open(server_settings_filename, 'w') as outfile:
-            json.dump(server_settings_filename,
+            json.dump(server_data,
                       outfile,
                       indent=4)
 
-    def _update_admin_data(self):
+    def _update_server_data(self):
         try:
-            self.cmc.update(admin_list=self.admin_data)
-            self.alert.update(admin_list=self.admin_data)
-            self.subscriber.update(admin_list=self.admin_data)
-            self.misc.update(admin_list=self.admin_data)
+            self.cmc.update(server_data=self.server_data)
+            self.alert.update(server_data=self.server_data)
+            self.subscriber.update(server_data=self.server_data)
+            self.misc.update(server_data=self.server_data)
         except Exception as e:
-            print("Failed to update admin data. See error.log.")
+            print("Failed to update server data. See error.log.")
             logger.error("Exception: {}".format(str(e)))
 
     async def _update_data(self, minute=0):
@@ -214,6 +214,35 @@ class CoreFunctionality:
         except:
             pass
 
+    async def display_server_settings(self, ctx):
+        """
+        Displays server settings of cmds the admins have enabled
+        """
+        try:
+            try:
+                ctx.message.channel.server
+            except:
+                await self._say_msg("Not a valid server to toggle mode.")
+                return
+            msg = ''
+            server_id = ctx.message.server.id
+            if server_id not in self.server_data:
+                await self._say_msg("No settings to display.")
+                return
+            elif len(self.server_data[server_id]) == 0:
+                await self._say_msg("No settings to display.")
+                return
+            for setting in self.server_data[server_id]:
+                setting_line = "{}\n".format(setting)
+                msg += setting_line
+            em = discord.Embed(title="Server Settings",
+                               description=msg,
+                               colour=0xFFFFFF)
+            await self._say_msg(emb=em)
+        except Exception as e:
+            print("Failed to display server settings. See error.log.")
+            logger.error("Exception: {}".format(str(e)))
+
     async def toggle_commands(self, ctx, mode):
         """
         Toggles the command mode on/off
@@ -224,7 +253,7 @@ class CoreFunctionality:
             except:
                 await self._say_msg("Command must be used in a server.")
                 return
-            if "CMB Admin" not in [role.name for role in user_roles]:
+            if CMB_ADMIN not in [role.name for role in user_roles]:
                 await self._say_msg("Admin privilege is required for "
                                     "this command.")
                 return
@@ -232,18 +261,18 @@ class CoreFunctionality:
             try:
                 server = self.bot.get_channel(channel).server  # validate channel
             except:
-                await self._say_msg("Not a valid server to toggle admin mode.")
+                await self._say_msg("Not a valid server to toggle mode.")
                 return
-            if server.id not in self.admin_data:
-                self.admin_data[server.id] = [mode]
-            elif mode in self.admin_data[server.id]:
-                self.admin_data[server.id].remove(mode)
+            if server.id not in self.server_data:
+                self.server_data[server.id] = [mode]
+            elif mode in self.server_data[server.id]:
+                self.server_data[server.id].remove(mode)
                 await self._say_msg("'{}' has been taken off.".format(mode))
-            elif mode not in self.admin_data[server.id]:
-                self.admin_data[server.id].append(mode)
+            elif mode not in self.server_data[server.id]:
+                self.server_data[server.id].append(mode)
                 await self._say_msg("Server set '{}'.".format(mode))
-            self._save_admin_file(self.admin_data)
-            self._update_admin_data()
+            self._save_server_file(self.server_data)
+            self._update_server_data()
         except Exception as e:
-            print("Failed to toggle admin mode. See error.log.")
+            print("Failed to toggle {}. See error.log.".format(mode))
             logger.error("Exception: {}".format(str(e)))

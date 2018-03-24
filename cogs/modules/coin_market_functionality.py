@@ -12,20 +12,20 @@ CMC_DISABLED = "CMC_DISABLED"
 class CoinMarketFunctionality:
     """Handles CMC command functionality"""
 
-    def __init__(self, bot, coin_market, admin_list):
+    def __init__(self, bot, coin_market, server_data):
         self.bot = bot
-        self.admin_list = admin_list
+        self.server_data = server_data
         self.acronym_list = ""
         self.market_list = ""
         self.market_stats = ""
         self.coin_market = coin_market
 
-    def update(self, market_list=None, acronym_list=None, market_stats=None, admin_list=None):
+    def update(self, market_list=None, acronym_list=None, market_stats=None, server_data=None):
         """
-        Updates utilities with new coin market and admin data
+        Updates utilities with new coin market and server data
         """
-        if admin_list:
-            self.admin_list = admin_list
+        if server_data:
+            self.server_data = server_data
         if market_list:
             self.market_list = market_list
         if acronym_list:
@@ -40,10 +40,10 @@ class CoinMarketFunctionality:
         """
         user_roles = ctx.message.author.roles
         server_id = ctx.message.server.id
-        if server_id not in self.admin_list:
+        if server_id not in self.server_data:
             return True
-        elif (ADMIN_ONLY in self.admin_list[server_id]
-              or CMC_DISABLED in self.admin_list[server_id]):
+        elif (ADMIN_ONLY in self.server_data[server_id]
+              or CMC_DISABLED in self.server_data[server_id]):
             if CMB_ADMIN not in [role.name for role in user_roles]:
                 return False
         return True

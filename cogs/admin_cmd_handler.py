@@ -16,6 +16,15 @@ class AdminCommands:
     def __init__(self, cmd_function):
         self.cmd_function = cmd_function
 
+    @commands.command(name='ss', pass_context=True)
+    async def ss(self, ctx):
+        """
+        Obtains server settings
+        An example for this command would be:
+        "$ss"
+        """
+        await self.cmd_function.display_server_settings(ctx)
+
     @commands.command(name='admin', pass_context=True)
     async def admin(self, ctx):
         """
@@ -28,7 +37,7 @@ class AdminCommands:
     @commands.command(name='togglep', pass_context=True)
     async def togglep(self, ctx):
         """
-        Toggles prefix mode
+        Toggles prefix command availability
         An example for this command would be:
         "$togglep"
         """
@@ -37,7 +46,7 @@ class AdminCommands:
     @commands.command(name='togglec', pass_context=True)
     async def togglec(self, ctx):
         """
-        Toggles cmc mode
+        Toggles cmc command availability
         An example for this command would be:
         "$togglec"
         """
@@ -46,7 +55,7 @@ class AdminCommands:
     @commands.command(name='togglea', pass_context=True)
     async def togglea(self, ctx):
         """
-        Toggles alert mode
+        Toggles alert command availability
         An example for this command would be:
         "$togglea"
         """
@@ -55,7 +64,7 @@ class AdminCommands:
     @commands.command(name='toggles', pass_context=True)
     async def toggles(self, ctx):
         """
-        Toggles subscriber mode
+        Toggles subscriber command availability
         An example for this command would be:
         "$toggles"
         """
@@ -64,7 +73,7 @@ class AdminCommands:
     @commands.command(name='togglem', pass_context=True)
     async def togglem(self, ctx):
         """
-        Toggles subscriber mode
+        Toggles misc command availability
         An example for this command would be:
         "$togglem"
         """
