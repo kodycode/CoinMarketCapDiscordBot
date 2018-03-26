@@ -47,10 +47,9 @@ class CoinMarketFunctionality:
                   or CMC_DISABLED in self.server_data[server_id]):
                 if CMB_ADMIN not in [role.name for role in user_roles]:
                     return False
+            return True
         except:
             pass
-        finally:
-            return True
 
     async def _say_msg(self, msg=None, channel=None, emb=None):
         """

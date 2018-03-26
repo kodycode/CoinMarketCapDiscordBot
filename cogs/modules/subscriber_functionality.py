@@ -53,10 +53,9 @@ class SubscriberFunctionality:
                   or SUBSCRIBER_DISABLED in self.server_data[server_id]):
                 if CMB_ADMIN not in [role.name for role in user_roles]:
                     return False
+            return True
         except:
             pass
-        finally:
-            return True
 
     def _check_subscriber_file(self):
         """

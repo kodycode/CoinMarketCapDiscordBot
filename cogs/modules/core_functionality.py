@@ -225,7 +225,7 @@ class CoreFunctionality:
             try:
                 ctx.message.channel.server
             except:
-                await self._say_msg("Not a valid server to toggle mode.")
+                await self._say_msg("Not a valid server to retrieve settings.")
                 return
             msg = ''
             server_id = ctx.message.server.id

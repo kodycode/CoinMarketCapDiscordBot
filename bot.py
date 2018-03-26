@@ -159,10 +159,9 @@ def _check_permission(ctx):
               or PREFIX_DISABLED in server_list[server_id]):
             if CMB_ADMIN not in [role.name for role in user_roles]:
                 return False
+        return True
     except:
         pass
-    finally:
-        return True
 
 
 def update_server_count(server_count):
