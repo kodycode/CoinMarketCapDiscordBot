@@ -22,15 +22,19 @@ class MiscFunctionality:
         Checks if user contains the correct permissions to use these
         commands
         """
-        user_roles = ctx.message.author.roles
-        server_id = ctx.message.server.id
-        if server_id not in self.server_data:
+        try:
+            user_roles = ctx.message.author.roles
+            server_id = ctx.message.server.id
+            if server_id not in self.server_data:
+                return True
+            elif (ADMIN_ONLY in self.server_data[server_id]
+                  or MISC_DISABLED in self.server_data[server_id]):
+                if CMB_ADMIN not in [role.name for role in user_roles]:
+                    return False
+        except:
+            pass
+        finally:
             return True
-        elif (ADMIN_ONLY in self.server_data[server_id]
-              or MISC_DISABLED in self.server_data[server_id]):
-            if CMB_ADMIN not in [role.name for role in user_roles]:
-                return False
-        return True
 
     def update(self, server_data=None):
         """

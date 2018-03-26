@@ -148,17 +148,21 @@ def _check_permission(ctx):
     Checks if user contains the correct permissions to use these
     commands
     """
-    with open('server_settings.json') as settings:
-        server_list = json.load(settings)
-    user_roles = ctx.message.author.roles
-    server_id = ctx.message.server.id
-    if server_id not in server_list:
+    try:
+        with open('server_settings.json') as settings:
+            server_list = json.load(settings)
+        user_roles = ctx.message.author.roles
+        server_id = ctx.message.server.id
+        if server_id not in server_list:
+            return True
+        elif (CMB_ADMIN in server_list[server_id]
+              or PREFIX_DISABLED in server_list[server_id]):
+            if CMB_ADMIN not in [role.name for role in user_roles]:
+                return False
+    except:
+        pass
+    finally:
         return True
-    elif (CMB_ADMIN in server_list[server_id]
-          or PREFIX_DISABLED in server_list[server_id]):
-        if CMB_ADMIN not in [role.name for role in user_roles]:
-            return False
-    return True
 
 
 def update_server_count(server_count):
