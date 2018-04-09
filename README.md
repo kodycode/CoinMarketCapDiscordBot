@@ -30,7 +30,7 @@ This bot has commands to look up cryptocurrencies, subscribe to live updates, cr
 Stay tuned for more features.
 
 ## Donations:
-Not mandatory at all, but if you're feeling generous:
+All donations are greatly appreciated and they help very much with maintaining the live bot:
 ```
 ETH: 0x13318b2A795940D119b999ECfe827708131fA3f6
 LTC: LiChyn9o9VhppANUHDhe6ReFjGoGhLqtZm
