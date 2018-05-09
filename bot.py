@@ -67,9 +67,8 @@ class CoinMarketBot:
                 try:
                     if message.server.id in prefix_list:
                         server_prefix = prefix_list[message.server.id]
-                        if message.content.startswith(config_data["cmd_prefix"]):
-                            if config_data["cmd_prefix"] != server_prefix:
-                                return
+                        if not message.content.startswith(server_prefix):
+                            return
                         message.content = message.content.replace(server_prefix,
                                                                   config_data["cmd_prefix"],
                                                                   1)
