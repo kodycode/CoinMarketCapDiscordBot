@@ -1,5 +1,6 @@
 from bot_logger import logger
 from cogs.modules.alert_functionality import AlertFunctionality
+from cogs.modules.cal_functionality import CalFunctionality
 from cogs.modules.coin_market_functionality import CoinMarketFunctionality
 from cogs.modules.coin_market import CoinMarket
 from cogs.modules.misc_functionality import MiscFunctionality
@@ -41,6 +42,9 @@ class CoreFunctionality:
                                                   self.coin_market,
                                                   self.config_data["subscriber_capacity"],
                                                   self.server_data)
+        self.cal = CalFunctionality(bot,
+                                    self.coin_market,
+                                    self.server_data)
         self.misc = MiscFunctionality(bot, self.server_data)
         self._save_server_file(self.server_data, backup=True)
         self.bot.loop.create_task(self._continuous_updates())

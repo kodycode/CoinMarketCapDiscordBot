@@ -47,8 +47,6 @@ class CoinMarket:
     def __init__(self):
         """
         Initiates CoinMarket
-
-        @param bot - discord bot object
         """
         self.market = Market()
 

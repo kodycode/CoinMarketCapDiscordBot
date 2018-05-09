@@ -8,6 +8,7 @@ CMC_DISABLED = "CMC_DISABLED"
 ALERT_DISABLED = "ALERT_DISABLED"
 SUBSCRIBER_DISABLED = "SUBSCRIBER_DISABLED"
 MISC_DISABLED = "MISC_DISABLED"
+CAL_DISABLED = "CAL_DISABLED"
 
 
 class AdminCommands:
@@ -78,3 +79,12 @@ class AdminCommands:
         "$togglem"
         """
         await self.cmd_function.toggle_commands(ctx, MISC_DISABLED)
+
+    @commands.command(name='togglecal', pass_context=True)
+    async def togglecal(self, ctx):
+        """
+        Toggles calendar command availability
+        An example for this command would be:
+        "$togglecal"
+        """
+        await self.cmd_function.toggle_commands(ctx, CAL_DISABLED)

@@ -1,5 +1,6 @@
 from cogs.admin_cmd_handler import AdminCommands
 from cogs.alert_cmd_handler import AlertCommands
+from cogs.coinmarketcal_cmd_handler import CalCommands
 from cogs.coin_market_cmd_handler import CoinMarketCommands
 from cogs.misc_cmd_handler import MiscCommands
 from cogs.subscriber_cmd_handler import SubscriberCommands
@@ -13,3 +14,4 @@ def setup(bot):
     bot.add_cog(CoinMarketCommands(cmd_function))
     bot.add_cog(SubscriberCommands(cmd_function))
     bot.add_cog(AlertCommands(cmd_function))
+    bot.add_cog(CalCommands(cmd_function))
