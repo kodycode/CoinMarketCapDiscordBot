@@ -1,4 +1,4 @@
-# from bot_logger import logger
+from bot_logger import logger
 import requests
 
 
@@ -36,8 +36,7 @@ class CoinMarketCal:
             return token_req.json()["access_token"]
         except Exception as e:
             print("Error receiving cal access token.")
-            print("Exception: {}".format(str(e)))
-            # logger.error("Exception: {}".format(str(e)))
+            logger.error("Exception: {}".format(str(e)))
 
     def get_coin_events(self, coin, page):
         """
@@ -50,9 +49,8 @@ class CoinMarketCal:
         try:
             r_url = ("{}access_token={}&page={}&max=5&coins={}"
                      "".format(EVENT_URL, self.access_token, page, coin))
-            token_req = requests.get(r_url)
-            event_list = token_req.json()
+            event_req = requests.get(r_url)
+            return event_req.json()
         except Exception as e:
             print("Error receiving coin events.")
-            print("Exception: {}".format(str(e)))
-            # logger.error("Exception: {}".format(str(e)))
+            logger.error("Exception: {}".format(str(e)))
