@@ -68,7 +68,7 @@ class CalFunctionality:
         created_date = "{} {} {}".format(created_split[0], created_split[1], created_split[2])
         twitter_acc = event["twitter_account"]
         if event["is_hot"]:
-            event["title"] = ":fire: " + event["title"]
+            event["title"] = event["title"] + " :fire:"
         if twitter_acc is not None:
             footer = twitter_acc
         msg = ("__**{}**__\n"
