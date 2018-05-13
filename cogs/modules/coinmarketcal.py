@@ -32,25 +32,24 @@ class CoinMarketCal:
             r_url = ("{}&client_id={}&client_secret={}"
                      "".format(TOKEN_URL, client_id, client_secret))
             token_req = requests.get(r_url)
-            print(token_req.json()["access_token"])
             return token_req.json()["access_token"]
-        except Exception as e:
+        except CoinMarketCalException as e:
             print("Error receiving cal access token.")
             logger.error("Exception: {}".format(str(e)))
 
-    def get_coin_events(self, coin, page):
+    def get_coin_event(self, coin, page):
         """
         Retrieves events based around the specified coin
-        (Gets 5 events in one request)
+        (Gets 1 event in one request)
 
         @param coin - coin to get events on
         @param page - page of the number of events
         """
         try:
-            r_url = ("{}access_token={}&page={}&max=5&coins={}"
+            r_url = ("{}access_token={}&page={}&max=1&coins={}"
                      "".format(EVENT_URL, self.access_token, page, coin))
             event_req = requests.get(r_url)
             return event_req.json()
-        except Exception as e:
+        except CoinMarketCalException as e:
             print("Error receiving coin events.")
             logger.error("Exception: {}".format(str(e)))

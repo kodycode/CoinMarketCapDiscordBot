@@ -7,11 +7,16 @@ class CalCommands:
     def __init__(self, cmd_function):
         self.cmd_function = cmd_function
 
-    @commands.command(name="cal", pass_context=True)
-    async def cal(self, coin, page_number):
+    @commands.command(name="cal")
+    async def cal(self, currency, event_num=1):
         """
-        Shows list of events for the coin given
+        Shows an upcoming event for the coin given
         An example for this command would be:
         "$cal"
+
+        @param currency - requested cryptocurrency
+        @param event_num - number in the event list to get
+                           information on
+                           (default is first/upcoming event)
         """
-        await self.cmd_function.cal.display_event(coin, page_number)
+        await self.cmd_function.cal.display_event(currency, event_num)

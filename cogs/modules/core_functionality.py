@@ -43,7 +43,7 @@ class CoreFunctionality:
                                                   self.config_data["subscriber_capacity"],
                                                   self.server_data)
         self.cal = CalFunctionality(bot,
-                                    self.coin_market,
+                                    self.config_data,
                                     self.server_data)
         self.misc = MiscFunctionality(bot, self.server_data)
         self._save_server_file(self.server_data, backup=True)
@@ -82,6 +82,7 @@ class CoreFunctionality:
             self.alert.update(server_data=self.server_data)
             self.subscriber.update(server_data=self.server_data)
             self.misc.update(server_data=self.server_data)
+            self.cal.update(server_data=self.server_data)
         except Exception as e:
             print("Failed to update server data. See error.log.")
             logger.error("Exception: {}".format(str(e)))
@@ -95,6 +96,7 @@ class CoreFunctionality:
                             self.market_stats)
             self.alert.update(self.market_list, self.acronym_list)
             self.subscriber.update(self.market_list, self.acronym_list)
+            self.cal.update(self.acronym_list)
             await self._update_game_status()
             await self.alert.alert_user()
             if self.started:
