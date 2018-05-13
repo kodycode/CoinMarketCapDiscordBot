@@ -12,7 +12,8 @@ with open('config.json') as config:
     config_data = json.load(config)
 bot = commands.Bot(command_prefix=config_data["cmd_prefix"],
                    description="Displays market data from "
-                               "https://coinmarketcap.com/")
+                               "https://coinmarketcap.com/",
+                   pm_help=True)
 
 
 class CoinMarketBotException(Exception):
