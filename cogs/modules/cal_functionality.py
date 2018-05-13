@@ -2,6 +2,10 @@ from bot_logger import logger
 from cogs.modules.coinmarketcal import CoinMarketCal
 import discord
 
+
+CMB_ADMIN = "CMB ADMIN"
+ADMIN_ONLY = "ADMIN_ONLY"
+CAL_DISABLED = "CAL_DISABLED"
 MONTHS = ["January", "February", "March",
           "April", "May", "June",
           "July", "August", "September",
@@ -17,6 +21,24 @@ class CalFunctionality:
         self.server_data = server_data
         self.cal = CoinMarketCal(config_data["coinmarketcal_client_id"],
                                  config_data["coinmarketcal_client_secret"])
+
+    def _check_permission(self, ctx):
+        """
+        Checks if user contains the correct permissions to use these
+        commands
+        """
+        try:
+            user_roles = ctx.message.author.roles
+            server_id = ctx.message.server.id
+            if server_id not in self.server_data:
+                return True
+            elif (ADMIN_ONLY in self.server_data[server_id]
+                  or CAL_DISABLED in self.server_data[server_id]):
+                if CMB_ADMIN not in [role.name for role in user_roles]:
+                    return False
+            return True
+        except:
+            return True
 
     def update(self, acronym_list=None, server_data=None):
         """
@@ -92,11 +114,13 @@ class CalFunctionality:
                            footer=footer)
         return em
 
-    async def display_event(self, currency, page):
+    async def display_event(self, ctx, currency, page):
         """
         Displays events about a requested cryptocurrency
         """
         try:
+            if not self._check_permission(ctx):
+                return
             if currency.upper() in self.acronym_list:
                 currency = self.acronym_list[currency.upper()]
             try:
