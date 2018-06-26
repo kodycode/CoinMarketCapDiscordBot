@@ -81,12 +81,12 @@ class CalFunctionality:
         # format date of event
         date_event = event["date_event"].split("T")[0]
         date_split = date_event.split("-")
-        date_split[1] = MONTHS[int(date_split[1])]  # replace month num with name
+        date_split[1] = MONTHS[int(date_split[1]) - 1]  # replace month num with name
         date_event = "{} {} {}".format(date_split[0], date_split[1], date_split[2])
         # format created date
         created_date = event["created_date"].split("T")[0]
         created_split = created_date.split("-")
-        created_split[1] = MONTHS[int(created_split[1])]  # replace month num with name
+        created_split[1] = MONTHS[int(created_split[1]) - 1]  # replace month num with name
         created_date = "{} {} {}".format(created_split[0], created_split[1], created_split[2])
         twitter_acc = event["twitter_account"]
         if event["is_hot"]:
