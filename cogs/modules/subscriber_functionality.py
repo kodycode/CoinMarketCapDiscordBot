@@ -139,7 +139,10 @@ class SubscriberFunctionality:
         try:
             valid_time = True
             if int(minute) != int(channel_settings["interval"]):
-                if int(minute) % int(channel_settings["interval"]) != 0 or int(minute) == int(channel_settings["interval"]):
+                try:
+                    if int(minute) % int(channel_settings["interval"]) != 0:
+                        valid_time = False
+                except ZeroDivisionError:
                     valid_time = False
         except KeyError:
             pass
