@@ -80,6 +80,7 @@ class SubscriberCommands:
     async def interval(self, ctx, rate: str):
         """
         Sets the interval of how often the bot should post
+        (Interval begins at midnight)
         An example for this command would be:
         "$interval hourly"
 
@@ -87,6 +88,11 @@ class SubscriberCommands:
         "default" - posts every 5 minutes
         "half" - posts at every half-hour mark
         "hourly" - posts at every hour mark
+        "2h" - posts every 2 hours
+        "3h" - posts every 3 hours
+        "6h" - posts every 6 hours
+        "12h" - posts every 12 hours
+        "24h" - posts every 24 hours
 
         @param ctx - context of the command sent
         @param rate - rate at which the bot should post

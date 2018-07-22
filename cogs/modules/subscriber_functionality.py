@@ -442,6 +442,7 @@ class SubscriberFunctionality:
                 return
             channel = ctx.message.channel.id
             if channel in self.subscriber_data:
+                # Probably going to re-do this in the future
                 if rate == "24h":
                     self.subscriber_data[channel]["interval"] = "0"
                 elif rate == "12h":
