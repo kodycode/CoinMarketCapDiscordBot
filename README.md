@@ -3,7 +3,7 @@
 [![Discord Bots](https://discordbots.org/api/widget/servers/353373501274456065.svg?noavatar=true)](https://discordbots.org/bot/353373501274456065)
 [![Discord Bots](https://discordbots.org/api/widget/upvotes/353373501274456065.svg?noavatar=true)](https://discordbots.org/bot/353373501274456065)
 # CoinMarketBot
-___**[4/15/2020] As of this day, the bot will no longer be hosted publically. I'm happy that the bot has reached a point of catering ~780 servers totaling ~258,000 members, but no longer do I have interest or the investment to maintain it. Should anyone have questions or need help with hosting their own bot, feel free to reach out to me.**___
+___**[4/15/2020] As of this day, the bot will no longer be hosted publically. I'm happy that the bot has reached a point of catering ~780 servers totaling ~258,000 members, but no longer do I have interest or the investment to maintain it. Should anyone have questions or need help with hosting their own bot, feel free to reach out to me. Preferably, I'd look at the [v1 code](https://github.com/kodycode/CoinMarketBot/tree/v1) to better understand the bot's original functionality. While it doesn't support Coinmarketcap's v2 API during that time, it's cleaner than some of the workarounds I had to do to accomadate for the API changes.**___
 
 A Discord bot that sends constant cryptocurrency updates to text-channel subscribers and can create alert notifications.
 
